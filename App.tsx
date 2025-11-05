@@ -26,6 +26,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   // Filter state
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -109,6 +110,7 @@ const App: React.FC = () => {
     if (!selectedActivityForForm || submitting) return;
 
     setSubmitting(true);
+    setSubmissionError(null); // Reset error state on new submission
     
     const newTeamPayload = {
         activityId: formData.activityId,
@@ -134,7 +136,7 @@ const App: React.FC = () => {
         });
 
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            throw new Error(`เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: ${response.statusText}`);
         }
         
         const result = await response.json();
@@ -150,11 +152,13 @@ const App: React.FC = () => {
                 teachers: [], students: [],
             });
         } else {
+            // Handle application-level errors returned from the script
             throw new Error(result.message || 'An error occurred on the server.');
         }
     } catch (error) {
         console.error('Submission failed:', error);
-        alert('เกิดข้อผิดพลาดในการส่งใบสมัคร กรุณาลองใหม่อีกครั้ง');
+        // Display the extracted error message in the UI
+        setSubmissionError(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดที่ไม่รู้จัก กรุณาลองใหม่อีกครั้ง');
     } finally {
         setSubmitting(false);
     }
@@ -344,6 +348,13 @@ const App: React.FC = () => {
                                 ))}
                               </div>
                           </div>
+                          
+                          {submissionError && (
+                            <div className="p-3 my-4 text-sm text-red-800 bg-red-100 rounded-lg text-center" role="alert">
+                              <span className="font-medium">เกิดข้อผิดพลาด:</span> {submissionError}
+                            </div>
+                          )}
+
                           <div className="flex justify-between">
                               <button type="button" onClick={prevStep} className="bg-slate-200 text-slate-700 font-bold py-2 px-6 rounded-lg hover:bg-slate-300">ย้อนกลับ</button>
                               <button type="submit" disabled={submitting} className="bg-green-500 text-white font-bold py-2 px-6 rounded-lg shadow-sm hover:bg-green-600 disabled:bg-slate-400 disabled:cursor-wait">
