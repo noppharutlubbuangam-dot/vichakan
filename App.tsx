@@ -1,15 +1,35 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Section } from './components/Section';
 import { Badge } from './components/Badge';
-import { ACTIVITIES, CATEGORIES, INITIAL_TEAMS } from './constants';
-import type { Activity, Team, TeamMember, TeamStatus } from './types';
+import type { Activity, Team, TeamMember, TeamStatus, Category } from './types';
 import { CompetitionMode, FileType } from './types';
 
+// IMPORTANT: Replace this placeholder with your deployed Google Apps Script Web App URL.
+// The script will act as the backend, connecting to your Google Sheet.
+// To create it:
+// 1. In your Google Drive folder (ID: "1rqv8_Uh9SqmvLjsY--9CRwYRPYBCyjAD"), create a new Google Sheet.
+// 2. Go to Extensions > Apps Script.
+// 3. Write functions to handle doGet() for fetching data and doPost() for adding teams.
+// 4. Your script must handle CORS by returning appropriate headers.
+// 5. Deploy the script as a Web App with access for "Anyone".
+// 6. Paste the deployed Web App URL here.
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzw4WHTOjxO7CYItRJWaRo2TSVlMLSGidM-Tqob4dB39cYtIi48huNOuiQJrjcatl9/exec';
+
 const App: React.FC = () => {
+  // Data state
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  
+  // UI State
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+
+  // Filter state
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedActivityFilter, setSelectedActivityFilter] = useState<string>('all');
-  const [teams, setTeams] = useState<Team[]>(INITIAL_TEAMS);
   
   // Form State
   const [formStep, setFormStep] = useState(1);
@@ -24,15 +44,46 @@ const App: React.FC = () => {
       teachers: [] as TeamMember[],
       students: [] as TeamMember[],
   });
+  
+  // Fetch initial data from Google Sheets via Apps Script
+  useEffect(() => {
+    const fetchData = async () => {
+      if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL') {
+        setError('กรุณาตั้งค่า URL ของ Google Apps Script ในไฟล์ App.tsx');
+        setLoading(false);
+        return;
+      }
+      try {
+        const response = await fetch(SCRIPT_URL);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        // Assuming the script returns data in this format: { categories: [], activities: [], teams: [] }
+        setCategories(data.categories || []);
+        setActivities(data.activities || []);
+        setTeams(data.teams || []);
+        setError(null);
+      } catch (e) {
+        console.error("Failed to fetch data:", e);
+        setError("ไม่สามารถโหลดข้อมูลได้ กรุณาตรวจสอบว่า URL ของ Google Apps Script ถูกต้องและสคริปต์ทำงานได้");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const selectedActivityForForm = ACTIVITIES.find(act => act.id === formData.activityId);
+    fetchData();
+  }, []);
+
+  const selectedActivityForForm = activities.find(act => act.id === formData.activityId);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
     if (name === 'activityId') {
-      const activity = ACTIVITIES.find(act => act.id === value);
+      const activity = activities.find(act => act.id === value);
       if (activity) {
           setFormData(prev => ({
               ...prev,
@@ -56,12 +107,13 @@ const App: React.FC = () => {
   const nextStep = () => setFormStep(s => s + 1);
   const prevStep = () => setFormStep(s => s - 1);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedActivityForForm) return;
+    if (!selectedActivityForForm || submitting) return;
 
-    const newTeam: Team = {
-        id: `T${String(teams.length + 1).padStart(3, '0')}`,
+    setSubmitting(true);
+    
+    const newTeamPayload = {
         activityId: formData.activityId,
         teamName: formData.teamName,
         school: formData.school,
@@ -73,33 +125,57 @@ const App: React.FC = () => {
         },
         teachers: formData.teachers,
         students: formData.students,
-        status: 'รอตรวจสอบ' as TeamStatus.Pending,
-        order: teams.length + 1,
     };
-    setTeams(prev => [...prev, newTeam]);
-    alert(`ส่งใบสมัครสำหรับทีม "${formData.teamName}" เรียบร้อยแล้ว!`);
-    // Reset form
-    setFormStep(1);
-    setFormData({
-        activityId: '', level: '', school: '', teamName: '',
-        contactName: '', contactPhone: '', contactEmail: '',
-        teachers: [], students: [],
-    });
+
+    try {
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain', // Apps Script can have issues with application/json from fetch
+            },
+            body: JSON.stringify({ action: 'addTeam', payload: newTeamPayload }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        
+        const result = await response.json();
+
+        if (result.status === 'success' && result.data) {
+            setTeams(prev => [...prev, result.data]); // Add the new team returned from the server
+            alert(`ส่งใบสมัครสำหรับทีม "${formData.teamName}" เรียบร้อยแล้ว!`);
+            // Reset form
+            setFormStep(1);
+            setFormData({
+                activityId: '', level: '', school: '', teamName: '',
+                contactName: '', contactPhone: '', contactEmail: '',
+                teachers: [], students: [],
+            });
+        } else {
+            throw new Error(result.message || 'An error occurred on the server.');
+        }
+    } catch (error) {
+        console.error('Submission failed:', error);
+        alert('เกิดข้อผิดพลาดในการส่งใบสมัคร กรุณาลองใหม่อีกครั้ง');
+    } finally {
+        setSubmitting(false);
+    }
   };
 
   const filteredActivities = useMemo(() => {
-    return ACTIVITIES.filter(activity => {
+    return activities.filter(activity => {
       const categoryMatch = selectedCategory === 'all' || activity.categoryId === selectedCategory;
       const activityMatch = selectedActivityFilter === 'all' || activity.id === selectedActivityFilter;
       return categoryMatch && activityMatch;
     });
-  }, [selectedCategory, selectedActivityFilter]);
+  }, [selectedCategory, selectedActivityFilter, activities]);
 
   const reportData = useMemo(() => {
     const summary: { [key: string]: { teams: number, teachers: number, students: number, total: number } } = {};
     
     teams.forEach(team => {
-      const activity = ACTIVITIES.find(a => a.id === team.activityId);
+      const activity = activities.find(a => a.id === team.activityId);
       if (activity) {
         if (!summary[activity.name]) {
           summary[activity.name] = { teams: 0, teachers: 0, students: 0, total: 0 };
@@ -111,10 +187,10 @@ const App: React.FC = () => {
       }
     });
     return summary;
-  }, [teams]);
+  }, [teams, activities]);
 
 
-  // Helper components defined inside App to avoid prop drilling for simple cases
+  // Helper components
   const FormInput: React.FC<{name: string, label: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, required?: boolean, type?: string, placeholder?: string}> = ({ name, label, ...props }) => (
       <div>
           <label htmlFor={name} className="block text-sm font-medium text-slate-700">{label}</label>
@@ -130,8 +206,19 @@ const App: React.FC = () => {
           </select>
       </div>
   );
+
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-screen text-slate-600">กำลังโหลดข้อมูล...</div>;
+  }
   
-  // Main render
+  if (error) {
+    return <div className="flex flex-col justify-center items-center min-h-screen text-red-600 p-8 text-center bg-red-50">
+      <h2 className="text-2xl font-bold mb-4">เกิดข้อผิดพลาด</h2>
+      <p>{error}</p>
+      <p className="mt-2 text-sm text-slate-500">โปรดตรวจสอบการตั้งค่า Google Apps Script และการเชื่อมต่ออินเทอร์เน็ต</p>
+    </div>;
+  }
+  
   return (
     <div className="bg-slate-50 text-slate-800 min-h-screen pb-20">
       <main>
@@ -152,11 +239,11 @@ const App: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormSelect name="category" label="หมวดหมู่กิจกรรม" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
                 <option value="all">ทั้งหมด</option>
-                {CATEGORIES.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
               </FormSelect>
               <FormSelect name="activity" label="กิจกรรม" value={selectedActivityFilter} onChange={(e) => setSelectedActivityFilter(e.target.value)}>
                 <option value="all">ทั้งหมด</option>
-                {ACTIVITIES.filter(act => selectedCategory === 'all' || act.categoryId === selectedCategory).map(act => <option key={act.id} value={act.id}>{act.name}</option>)}
+                {activities.filter(act => selectedCategory === 'all' || act.categoryId === selectedCategory).map(act => <option key={act.id} value={act.id}>{act.name}</option>)}
               </FormSelect>
             </div>
             <p className="text-sm text-slate-500 mt-4 text-center">เลือกหมวดหมู่เพื่อกรองรายการกิจกรรมที่สนใจ</p>
@@ -206,7 +293,7 @@ const App: React.FC = () => {
                           <h3 className="text-lg font-semibold">1. ข้อมูลการแข่งขัน</h3>
                           <FormSelect name="activityId" label="กิจกรรมที่สมัคร" value={formData.activityId} onChange={handleFormChange} required>
                             <option value="">-- เลือกกิจกรรม --</option>
-                            {ACTIVITIES.map(act => <option key={act.id} value={act.id}>{act.name}</option>)}
+                            {activities.map(act => <option key={act.id} value={act.id}>{act.name}</option>)}
                           </FormSelect>
                           {selectedActivityForForm && (
                             <FormSelect name="level" label="ระดับที่สมัคร" value={formData.level} onChange={handleFormChange} required>
@@ -238,7 +325,6 @@ const App: React.FC = () => {
                   {formStep === 3 && selectedActivityForForm && (
                       <div className="space-y-6 animate-fadeIn">
                           <h3 className="text-lg font-semibold">3. รายชื่อสมาชิกในทีม</h3>
-                          {/* Teacher Fields */}
                           <div>
                               <h4 className="font-semibold text-slate-800 mb-2">ครูผู้ควบคุมทีม ({selectedActivityForForm.teamComposition.teachers} คน)</h4>
                               <div className="space-y-4">
@@ -250,7 +336,6 @@ const App: React.FC = () => {
                                 ))}
                               </div>
                           </div>
-                          {/* Student Fields */}
                           <div>
                               <h4 className="font-semibold text-slate-800 mb-2">นักเรียน ({selectedActivityForForm.teamComposition.students} คน)</h4>
                                <div className="space-y-4">
@@ -264,7 +349,9 @@ const App: React.FC = () => {
                           </div>
                           <div className="flex justify-between">
                               <button type="button" onClick={prevStep} className="bg-slate-200 text-slate-700 font-bold py-2 px-6 rounded-lg hover:bg-slate-300">ย้อนกลับ</button>
-                              <button type="submit" className="bg-green-500 text-white font-bold py-2 px-6 rounded-lg shadow-sm hover:bg-green-600">ส่งใบสมัคร</button>
+                              <button type="submit" disabled={submitting} className="bg-green-500 text-white font-bold py-2 px-6 rounded-lg shadow-sm hover:bg-green-600 disabled:bg-slate-400 disabled:cursor-wait">
+                                {submitting ? 'กำลังส่ง...' : 'ส่งใบสมัคร'}
+                              </button>
                           </div>
                       </div>
                   )}
@@ -303,7 +390,7 @@ const App: React.FC = () => {
                     </thead>
                     <tbody>
                         {teams.map(team => {
-                            const activity = ACTIVITIES.find(a => a.id === team.activityId);
+                            const activity = activities.find(a => a.id === team.activityId);
                             return (
                                 <tr key={team.id} className="bg-white border-b hover:bg-slate-50">
                                     <td className="px-6 py-4 font-medium text-slate-900">{team.id}</td>
