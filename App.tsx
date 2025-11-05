@@ -48,11 +48,8 @@ const App: React.FC = () => {
   // Fetch initial data from Google Sheets via Apps Script
   useEffect(() => {
     const fetchData = async () => {
-      if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL') {
-        setError('กรุณาตั้งค่า URL ของ Google Apps Script ในไฟล์ App.tsx');
-        setLoading(false);
-        return;
-      }
+      // FIX: Removed check for placeholder SCRIPT_URL as it has been replaced.
+      // This check caused a TypeScript error because the constant value would never match the placeholder string.
       try {
         const response = await fetch(SCRIPT_URL);
         if (!response.ok) {
