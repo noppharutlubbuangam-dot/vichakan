@@ -1,17 +1,55 @@
 <!DOCTYPE html>
 <html lang="th">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ระบบลงทะเบียนแข่งขันระดับสถานศึกษา</title>
+<head>
+    <!-- ... (ส่วน <head> เหมือนเดิมทุกประการ) ... -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <script type_Module="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script type_Module nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>ระบบลงทะเบียนแข่งขัน</title>
     <style>
-      body {
-        font-family: 'Kanit', 'Inter', sans-serif;
-      }
+        body {
+            font-family: 'Kanit', 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .app-section { display: none; }
+        .app-section.active { display: block; }
+        .nav-item.active { color: #0ea5e9; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .form-step { display: none; }
+        .form-step.active { display: block; }
+        .badge-green { background-color: #dcfce7; color: #166534; border: 1px solid #22c55e; }
+        .badge-yellow { background-color: #fef9c3; color: #854d0e; border: 1px solid #f59e0b; }
+        .badge-red { background-color: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+            display: block;
+            font-size: 24px;
+            line-height: 1;
+            margin: 0 auto;
+        }
+        /* Style for file input button */
+        .file-input-style {
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            padding: 8px 12px;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .file-input-style:hover {
+            background-color: #e2e8f0;
+        }
     </style>
   <script type="importmap">
 {
@@ -23,8 +61,2176 @@
 }
 </script>
 </head>
-  <body class="bg-slate-50">
+<body class="text-slate-800">
+
+    <div class="container mx-auto max-w-5xl pb-24"> 
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="fixed inset-0 bg-white bg-opacity-75 z-50 flex-col items-center justify-center" style="display: none;">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-sky-500"></div>
+            <p class="mt-4 text-lg font-semibold text-sky-600">กำลังโหลด...</p>
+        </div>
+
+        <!-- 1. Hero Section -->
+        <section id="section-hero" class="app-section active p-6 text-center bg-slate-50 rounded-b-lg">
+            <ion-icon name="trophy-outline" class="text-6xl text-sky-500 mx-auto"></ion-icon>
+            <h1 class="text-3xl font-bold text-slate-900 mt-4">ลงทะเบียนแข่งขันระดับสถานศึกษา</h1>
+            <p class="text-lg text-slate-600 mt-2">ระบบจัดการการแข่งขันวิชาการและกิจกรรม</p>
+            <a href="#section-form" class="mt-6 inline-block bg-sky-500 text-white font-semibold px-8 py-3 rounded-lg shadow-md hover:bg-sky-600 transition-colors" onclick="navigateTo('section-form')">
+                เริ่มลงทะเบียน
+            </a>
+            <div class="mt-6 p-3 bg-sky-100 border border-sky-200 text-sky-800 rounded-lg text-sm text-left">
+                <strong>💡 คำแนะนำ:</strong> คลิก "เริ่มลงทะเบียน" เพื่อเลื่อนไปยังแบบฟอร์ม หรือเลื่อนลงเพื่อสำรวจกิจกรรมที่เปิดรับสมัคร
+            </div>
+            <div class="mt-10 text-left space-y-6">
+                <div class="flex flex-col gap-3 md:flex-row md:items-end">
+                    <div class="flex-1">
+                        <h2 class="text-xl font-bold text-slate-900">กิจกรรมที่เปิดรับสมัคร</h2>
+                        <p class="text-sm text-slate-500 mt-1">ค้นหากิจกรรมที่ยังเปิดให้สมัครและกดสมัครได้ทันที</p>
+                    </div>
+                    <div class="w-full md:w-80 relative">
+                        <span class="material-symbols-outlined text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">search</span>
+                        <input id="home-activity-search" type="search" class="w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="ค้นหาจากชื่อกิจกรรม หมวดหมู่ หรือระดับ" autocomplete="off">
+                    </div>
+                </div>
+                <div id="home-category-filter" class="flex flex-wrap gap-2"></div>
+                <p id="home-activity-meta" class="text-sm text-slate-500">กำลังโหลดข้อมูลกิจกรรม...</p>
+                <div id="home-activity-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                <div id="home-activity-empty" class="hidden text-center text-slate-500">
+                    <span class="material-symbols-outlined text-4xl mb-2 text-slate-400">info</span>
+                    <p>ไม่พบกิจกรรมที่ตรงกับคำค้นหา</p>
+                </div>
+                <div class="flex justify-center">
+                    <button id="home-activity-load-more" class="hidden px-5 py-2 rounded-lg border border-sky-500 text-sky-600 font-semibold hover:bg-sky-50 transition-colors">
+                        ดูเพิ่มเติม
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. & 3. Activities Filter & Cards -->
+        <section id="section-activities" class="app-section p-4">
+            <h2 class="text-2xl font-bold mb-4 px-2">รายการกิจกรรม</h2>
+            
+            <!-- 2. ตัวกรอง -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 px-2">
+                <select id="filter-category" class="w-full p-3 border border-slate-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="">-- เลือกหมวดหมู่กิจกรรม --</option>
+                </select>
+                <select id="filter-activity-name" class="w-full p-3 border border-slate-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="">-- เลือกกิจกรรม --</option>
+                </select>
+            </div>
+
+            <!-- 3. การ์ดกิจกรรม (จัดกลุ่ม) -->
+            <div id="activity-container" class="space-y-6">
+                <p id="activity-loading" class="text-slate-500">กำลังโหลดรายการกิจกรรม...</p>
+            </div>
+            
+            <div class="mt-6 p-3 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-sm">
+                <strong>💡 คำแนะนำ:</strong> เลือก "หมวดหมู่" เพื่อกรองรายการกิจกรรมที่สนใจ จากนั้นคลิก "สมัครทีม" บนการ์ดที่ต้องการ
+            </div>
+        </section>
+
+        <!-- 4. Form สมัครทีม -->
+        <section id="section-form" class="app-section p-4">
+            <h2 class="text-2xl font-bold mb-4 px-2">กรอกข้อมูลการสมัคร</h2>
+            
+            <!-- Stepper UI -->
+            <div class="flex justify-between items-center mb-6 px-2">
+                <div id="step-indicator-1" class="step-indicator active text-center flex-1">
+                    <div class="w-10 h-10 mx-auto bg-sky-500 text-white rounded-full flex items-center justify-center font-bold text-lg">1</div>
+                    <p class="text-sm font-semibold text-sky-600 mt-1">ข้อมูลทีม</p>
+                </div>
+                <div class="flex-1 h-1 bg-slate-200"></div>
+                <div id="step-indicator-2" class="step-indicator text-center flex-1">
+                    <div class="w-10 h-10 mx-auto bg-slate-300 text-slate-600 rounded-full flex items-center justify-center font-bold text-lg">2</div>
+                    <p class="text-sm font-semibold text-slate-500 mt-1">ผู้ติดต่อ</p>
+                </div>
+                <div class="flex-1 h-1 bg-slate-200"></div>
+                <div id="step-indicator-3" class="step-indicator text-center flex-1">
+                    <div class="w-10 h-10 mx-auto bg-slate-300 text-slate-600 rounded-full flex items-center justify-center font-bold text-lg">3</div>
+                    <p class="text-sm font-semibold text-slate-500 mt-1">สมาชิก</p>
+                </div>
+            </div>
+
+            <form id="registration-form" class="bg-white p-6 rounded-lg shadow-md border border-slate-200">
+                <!-- ⬇️ Step 1: Team Info (อัปเดต - เพิ่มช่องโลโก้) -->
+                <div id="form-step-1" class="form-step active">
+                    <h3 class="text-xl font-semibold mb-4">ขั้นที่ 1: ข้อมูลทีม</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="form-activity-category" class="block text-sm font-medium text-slate-700 mb-1">หมวดหมู่กิจกรรม</label>
+                            <select id="form-activity-category" class="w-full p-3 border border-slate-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                                <option value="">-- เลือกหมวดหมู่ --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="form-activity" class="block text-sm font-medium text-slate-700 mb-1">กิจกรรม*</label>
+                            <select id="form-activity" name="activity" class="w-full p-3 border border-slate-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+                                <option value="">-- เลือกกิจกรรม --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="form-level" class="block text-sm font-medium text-slate-700 mb-1">ระดับ*</label>
+                            <select id="form-level" name="level" class="w-full p-3 border border-slate-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+                                <option value="">-- เลือกระดับ --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="form-school" class="block text-sm font-medium text-slate-700 mb-1">โรงเรียน*</label>
+                            <input type="text" id="form-school" name="school" list="school-options" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="พิมพ์ชื่อโรงเรียนเพื่อค้นหา" autocomplete="off" required>
+                            <datalist id="school-options"></datalist>
+                        </div>
+                        <div>
+                            <label for="form-teamName" class="block text-sm font-medium text-slate-700 mb-1">ชื่อทีม (ถ้ามี)</label>
+                            <input type="text" id="form-teamName" name="teamName" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        </div>
+                        
+                        <!-- ⬇️ ช่องอัปโหลดโลโก้ (ใหม่) ⬇️ -->
+                        <div>
+                            <label for="form-logo" class="block text-sm font-medium text-slate-700 mb-1">โลโก้ทีม (ถ้ามี)</label>
+                            <input type="file" id="form-logo" name="logo" class="w-full text-sm text-slate-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-lg file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-sky-100 file:text-sky-700
+                                hover:file:bg-sky-200"
+                                accept="image/png, image/jpeg">
+                            <p id="logo-status" class="text-xs text-slate-500 mt-1">รองรับ .png, .jpg (ไม่เกิน 2MB)</p>
+                        </div>
+                        <!-- ⬆️ สิ้นสุดช่องอัปโหลดโลโก้ ⬆️ -->
+
+                    </div>
+                    <div class="mt-6 text-right">
+                        <button type="button" onclick="nextStep(2)" class="bg-sky-500 text-white font-semibold px-6 py-2 rounded-lg shadow-md hover:bg-sky-600 transition-colors">ถัดไป &gt;</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Contact Person -->
+                <div id="form-step-2" class="form-step">
+                    <h3 class="text-xl font-semibold mb-4">ขั้นที่ 2: ผู้ติดต่อหลัก (ครู/ผู้ประสานงาน)</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="contact-name" class="block text-sm font-medium text-slate-700 mb-1">ชื่อ-สกุล*</label>
+                            <input type="text" id="contact-name" name="contactName" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+                        </div>
+                        <div>
+                            <label for="contact-phone" class="block text-sm font-medium text-slate-700 mb-1">เบอร์โทรศัพท์*</label>
+                            <input type="tel" id="contact-phone" name="contactPhone" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+                        </div>
+                        <div>
+                            <label for="contact-email" class="block text-sm font-medium text-slate-700 mb-1">อีเมล*</label>
+                            <input type="email" id="contact-email" name="contactEmail" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-between">
+                        <button type="button" onclick="prevStep(1)" class="bg-slate-200 text-slate-700 font-semibold px-6 py-2 rounded-lg hover:bg-slate-300 transition-colors">&lt; ย้อนกลับ</button>
+                        <button type="button" onclick="nextStep(3)" class="bg-sky-500 text-white font-semibold px-6 py-2 rounded-lg shadow-md hover:bg-sky-600 transition-colors">ถัดไป &gt;</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Members -->
+                <div id="form-step-3" class="form-step">
+                    <h3 class="text-xl font-semibold mb-4">ขั้นที่ 3: รายชื่อสมาชิก</h3>
+                    <div id="member-requirements" class="p-3 bg-yellow-100 border border-yellow-200 text-yellow-800 rounded-lg mb-4">
+                        กรุณาเลือกกิจกรรมก่อน...
+                    </div>
+                    <div class="mb-6">
+                        <h4 class="text-lg font-semibold text-slate-800 mb-2">ครูผู้ควบคุม</h4>
+                        <div id="teacher-fields" class="space-y-3"></div>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-slate-800 mb-2">นักเรียน</h4>
+                        <div id="student-fields" class="space-y-3"></div>
+                    </div>
+                    <div class="mt-6 flex justify-between">
+                        <button type="button" onclick="prevStep(2)" class="bg-slate-200 text-slate-700 font-semibold px-6 py-2 rounded-lg hover:bg-slate-300 transition-colors">&lt; ย้อนกลับ</button>
+                        <button id="form-submit-button" type="submit" class="bg-green-500 text-white font-bold px-6 py-2 rounded-lg shadow-md hover:bg-green-600 transition-colors">🚀 ส่งใบสมัคร</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="mt-6 p-3 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-sm">
+                <strong>💡 คำแนะนำ:</strong> กรอกข้อมูลให้ครบถ้วน 3 ขั้นตอน จำนวนสมาชิกและครูที่ต้องกรอก จะขึ้นอยู่กับกิจกรรมที่เลือก
+            </div>
+        </section>
+
+        <!-- 5. Upload Files (อัปเดต: ลบ "โลโก้ทีม" ออก) -->
+        <section id="section-upload" class="app-section p-4">
+            <h2 class="text-2xl font-bold mb-4 px-2">อัปโหลดเอกสาร (เพิ่มเติม)</h2>
+            <div class="bg-white p-6 rounded-lg shadow-md border border-slate-200 space-y-4">
+                <div>
+                    <label for="upload-team-id" class="block text-sm font-medium text-slate-700 mb-1">เลือกทีม (ที่สมัครแล้ว)</label>
+                    <select id="upload-team-id" class="w-full p-3 border border-slate-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="">-- กรุณาเลือกรหัสทีม --</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="upload-file-type" class="block text-sm font-medium text-slate-700 mb-1">ประเภทไฟล์</label>
+                    <select id="upload-file-type" class="w-full p-3 border border-slate-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="">-- เลือกประเภทไฟล์ --</option>
+                        <option value="Consent">ใบยินยอมผู้ปกครอง</option>
+                        <option value="Slip">สลิปโอนเงิน (ถ้ามี)</option>
+                        <option value="Portfolio">แฟ้มผลงาน (ถ้ามี)</option>
+                        <option value="Other">อื่นๆ</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="file-input" class="block text-sm font-medium text-slate-700 mb-1">เลือกไฟล์ (PDF, JPG, PNG ไม่เกิน 5MB)</label>
+                    <input id="file-input" type="file" class="w-full text-sm text-slate-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-lg file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-sky-100 file:text-sky-700
+                        hover:file:bg-sky-200"
+                        accept=".pdf,.jpg,.jpeg,.png">
+                </div>
+                <button id="upload-button" class="w-full bg-sky-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-sky-600 transition-colors">
+                    อัปโหลดไฟล์
+                </button>
+                <div id="upload-status" class="mt-4 space-y-2">
+                    <!-- Upload status messages appear here -->
+                </div>
+            </div>
+            <div class="mt-6 p-3 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-sm">
+                <strong>💡 คำแนะนำ:</strong> ใช้ส่วนนี้เพื่ออัปโหลดเอกสารอื่นๆ ที่จำเป็นหลังจากการสมัครทีมเสร็จสิ้น
+            </div>
+        </section>
+
+        <!-- 6. Team List (อัปเดต: แสดงโลโก้) -->
+        <section id="section-teams" class="app-section p-4">
+            <h2 class="text-2xl font-bold mb-4 px-2">ตรวจสอบสถานะทีม</h2>
+            <div class="bg-white p-4 rounded-lg shadow-md border border-slate-200">
+                <div class="flex flex-col md:flex-row gap-4 mb-4">
+                    <input type="search" id="team-search" placeholder="🔎 ค้นหาจากชื่อทีม, โรงเรียน..." class="flex-grow p-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <button id="export-csv-button" type="button" class="bg-slate-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-slate-700">Export CSV</button>
+                    <button id="export-pdf-button" type="button" class="bg-slate-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-slate-700">Export PDF</button>
+                </div>
+                <div class="overflow-x-auto no-scrollbar">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-100">
+                            <tr>
+                                <th class="p-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"><input type="checkbox"></th>
+                                <th class="p-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">รหัสทีม</th>
+                                <th class="p-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">กิจกรรม</th>
+                                <th class="p-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ชื่อทีม / โลโก้</th> <!-- ⬅️ อัปเดต Header -->
+                                <th class="p-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ครู (ต้อง/มี)</th>
+                                <th class="p-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">นร. (ต้อง/มี)</th>
+                                <th class="p-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ระดับ</th>
+                                <th class="p-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="team-table-body" class="bg-white divide-y divide-slate-200">
+                            <tr><td colspan="8" class="p-4 text-center text-slate-500">กำลังโหลดข้อมูลทีม...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="mt-6 p-3 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-sm">
+                <strong>💡 คำแนะนำ:</strong> "Pending" = รอตรวจสอบ, "Approved" = สมัครสำเร็จ, "Rejected" = ข้อมูลไม่ครบ/ไม่ถูกต้อง
+            </div>
+        </section>
+
+        <!-- 7. Edit Team (UI Explanation) -->
+        <section id="section-edit" class="app-section p-4">
+             <h2 class="text-2xl font-bold mb-4 px-2">การจัดการข้อมูลทีม (สำหรับผู้สมัคร)</h2>
+             <div class="bg-white p-6 rounded-lg shadow-md border border-slate-200 space-y-4">
+                <p class="text-slate-700">ส่วนนี้คือหน้าสำหรับผู้สมัครเพื่อแก้ไขข้อมูลทีมและสมาชิกหลังจากสมัครไปแล้ว (โดยปกติจะเข้าผ่านลิงก์พิเศษที่ส่งให้ทางอีเมล หรือหลังจากล็อกอิน)</p>
+                <h3 class="text-lg font-semibold">การทำงานของ UI:</h3>
+                <ul class="list-decimal list-inside space-y-2 text-slate-600">
+                    <li>ผู้ใช้จะเห็นฟอร์มที่กรอกข้อมูลเดิมของทีมไว้</li>
+                    <li>มีปุ่ม <strong>"แก้ไขข้อมูลทีม"</strong> (เช่น ชื่อทีม, ผู้ติดต่อ, โลโก้)</li>
+                    <li>ในส่วนรายชื่อสมาชิก แต่ละคนจะมีปุ่ม <strong>[ แก้ไข ]</strong> และ <strong>[ ลบ 🗑️ ]</strong></li>
+                    <li>มีปุ่ม <strong>[ + เพิ่มสมาชิก ]</strong> (หากกิจกรรมอนุญาต หรือใช้แทนที่คนเดิม)</li>
+                    <li>เมื่อแก้ไขเสร็จ กดปุ่ม <strong>"บันทึกการเปลี่ยนแปลง"</strong></li>
+                </ul>
+             </div>
+        </section>
+
+        <!-- 8. Report -->
+        <section id="section-report" class="app-section p-4">
+            <h2 class="text-2xl font-bold mb-4 px-2">รายงานสรุปผล</h2>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-lg shadow border border-slate-200 text-center">
+                    <div class="text-3xl font-bold text-sky-600" id="report-total-teams">...</div>
+                    <div class="text-sm font-medium text-slate-600">ทีมทั้งหมด</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border border-slate-200 text-center">
+                    <div class="text-3xl font-bold text-sky-600" id="report-total-teachers">...</div>
+                    <div class="text-sm font-medium text-slate-600">ครูทั้งหมด</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border border-slate-200 text-center">
+                    <div class="text-3xl font-bold text-sky-600" id="report-total-students">...</div>
+                    <div class="text-sm font-medium text-slate-600">นักเรียนทั้งหมด</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border border-slate-200 text-center">
+                    <div class="text-3xl font-bold text-sky-600" id="report-total-all">...</div>
+                    <div class="text-sm font-medium text-slate-600">รวมสมาชิก</div>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-md border border-slate-200">
+                <h3 class="text-xl font-semibold mb-4">สรุปตามกิจกรรม</h3>
+                <div class="overflow-x-auto no-scrollbar">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-100">
+                            <tr>
+                                <th class="p-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">กิจกรรม</th>
+                                <th class="p-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">จำนวนทีม</th>
+                                <th class="p-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ครู</th>
+                                <th class="p-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">นักเรียน</th>
+                                <th class="p-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">รวม</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-table-body" class="bg-white divide-y divide-slate-200">
+                            <tr><td colspan="5" class="p-4 text-center text-slate-500">กำลังโหลดข้อมูลรายงาน...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 9. Admin Section -->
+        <section id="section-admin" class="app-section p-4">
+            <h2 class="text-2xl font-bold mb-4 px-2">สำหรับผู้ดูแลระบบ</h2>
+            <div class="bg-white p-6 rounded-lg shadow-md border border-slate-200">
+                <h3 class="text-xl font-semibold mb-4">รายการไฟล์ที่รอตรวจสอบ</h3>
+                <div id="admin-file-review-list" class="space-y-4">
+                    <p id="admin-loading" class="text-slate-500">กำลังโหลดรายการ...</p>
+                </div>
+            </div>
+             <div class="mt-6 p-3 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-sm">
+                <strong>💡 คำแนะนำ (Admin):</strong> ตรวจสอบไฟล์ที่อัปโหลดล่าสุด หากกด "ไม่ผ่าน" กรุณาระบุเหตุผลให้ชัดเจนในช่องหมายเหตุ
+            </div>
+        </section>
+
+    </div>
+
+    <!-- 10. Bottom Navbar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-10">
+        <div class="flex justify-around max-w-5xl mx-auto">
+            <button class="nav-item flex-1 p-3 text-center text-slate-600 hover:bg-sky-50 active" onclick="navigateTo('section-hero', this)">
+                <span class="material-symbols-outlined text-2xl">home</span>
+                <span class="text-xs block">หน้าหลัก</span>
+            </button>
+            <button class="nav-item flex-1 p-3 text-center text-slate-600 hover:bg-sky-50" onclick="navigateTo('section-form', this)">
+                <span class="material-symbols-outlined text-2xl">assignment</span>
+                <span class="text-xs block">สมัคร</span>
+            </button>
+            <button class="nav-item flex-1 p-3 text-center text-slate-600 hover:bg-sky-50" onclick="navigateTo('section-teams', this)">
+                <span class="material-symbols-outlined text-2xl">groups</span>
+                <span class="text-xs block">ทีม</span>
+            </button>
+            <button class="nav-item flex-1 p-3 text-center text-slate-600 hover:bg-sky-50" onclick="navigateTo('section-report', this)">
+                <span class="material-symbols-outlined text-2xl">monitoring</span>
+                <span class="text-xs block">รายงาน</span>
+            </button>
+            
+            <button id="nav-admin-button" class="nav-item flex-1 p-3 text-center text-slate-600 hover:bg-sky-50" onclick="navigateTo('section-admin', this)" style="display: none;">
+                <span class="material-symbols-outlined text-2xl">admin_panel_settings</span>
+                <span class="text-xs block">ผู้ดูแล</span>
+            </button>
+        </div>
+    </nav>
+
+
+    <!-- Client-side JavaScript -->
+    <script>
+        // --- Global State ---
+        let ALL_ACTIVITIES = [];
+        let ALL_TEAMS = [];
+        let CURRENT_STEP = 1;
+        let LOGO_FILE_DATA = null; // ⬅️ (ใหม่) ตัวแปรเก็บ Base64 ของโลโก้
+        const homeActivityState = {
+            search: '',
+            category: '',
+            visibleCount: 9,
+            pageSize: 9
+        };
+        let homeSearchDebounce = null;
+        let teamSearchTerm = '';
+        let teamSearchDebounce = null;
+        let isLoadingActivities = false;
+        let isLoadingTeams = false;
+        let isLoadingReport = false;
+        let suppressCategorySync = false;
+        const FETCH_COOLDOWN_MS = 30000;
+        let lastActivitiesFetch = 0;
+        let lastTeamsFetch = 0;
+        let lastReportFetch = 0;
+        let cachedReport = null;
+        let SCHOOL_OPTIONS = [];
+        let isLoadingSchools = false;
+        let lastSchoolFetch = 0;
+        const SCHOOL_FETCH_COOLDOWN_MS = 60000;
+        
+        // --- DOM Elements ---
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const sections = document.querySelectorAll('.app-section');
+        const navItems = document.querySelectorAll('.nav-item');
+        const homeActivitySearchInput = document.getElementById('home-activity-search');
+        const homeActivityContainer = document.getElementById('home-activity-container');
+        const homeActivityMeta = document.getElementById('home-activity-meta');
+        const homeActivityLoadMoreBtn = document.getElementById('home-activity-load-more');
+        const homeActivityEmpty = document.getElementById('home-activity-empty');
+        const homeCategoryFilter = document.getElementById('home-category-filter');
+        const activityContainer = document.getElementById('activity-container'); // ⬅️ อัปเดต ID
+        const activityLoading = document.getElementById('activity-loading');
+        const teamTableBody = document.getElementById('team-table-body');
+        const reportTableBody = document.getElementById('report-table-body');
+        const adminReviewList = document.getElementById('admin-file-review-list');
+        const adminLoading = document.getElementById('admin-loading');
+        
+        // --- Form Elements ---
+        const form = document.getElementById('registration-form');
+        const formSteps = document.querySelectorAll('.form-step');
+        const stepIndicators = document.querySelectorAll('.step-indicator');
+        const activityCategorySelect = document.getElementById('form-activity-category');
+        const activitySelect = document.getElementById('form-activity');
+        const levelSelect = document.getElementById('form-level');
+        const schoolInput = document.getElementById('form-school');
+        const schoolOptionsList = document.getElementById('school-options');
+        const logoInput = document.getElementById('form-logo'); // ⬅️ (ใหม่)
+        const logoStatus = document.getElementById('logo-status'); // ⬅️ (ใหม่)
+        const memberReqText = document.getElementById('member-requirements');
+        const teacherFields = document.getElementById('teacher-fields');
+        const studentFields = document.getElementById('student-fields');
+        const submitButton = document.getElementById('form-submit-button');
+        
+        // --- Upload Elements (Section 5) ---
+        const uploadButton = document.getElementById('upload-button');
+        const fileInput = document.getElementById('file-input');
+        const uploadTeamIdSelect = document.getElementById('upload-team-id');
+        const uploadFileTypeSelect = document.getElementById('upload-file-type');
+        const uploadStatusDiv = document.getElementById('upload-status');
+        const teamSearchInput = document.getElementById('team-search');
+
+
+        // --- Utility Functions ---
+
+        function showLoading() {
+            loadingOverlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+
+        function handleError(error) {
+            hideLoading();
+            const message = error && error.message ? error.message : 'ไม่ทราบสาเหตุ';
+            console.error(error);
+            Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: message
+            });
+        }
+
+        function formatDeadline(deadlineIso, fallbackText = 'ไม่ระบุ') {
+            if (!deadlineIso) {
+                return fallbackText;
+            }
+            const parsed = new Date(deadlineIso);
+            if (Number.isNaN(parsed.getTime())) {
+                return fallbackText;
+            }
+            return parsed.toLocaleString('th-TH', {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            });
+        }
+
+        function calculateRemainingTeams(activity) {
+            if (!activity) return null;
+            const maxTeams = typeof activity.maxTeams === 'number' && activity.maxTeams > 0 ? activity.maxTeams : null;
+            if (maxTeams === null) return null;
+            const currentTeams = Number(activity.currentTeams || 0);
+            const remaining = activity.remainingTeams ?? (maxTeams - currentTeams);
+            return Math.max(remaining, 0);
+        }
+
+        function safeJsonParse(value, fallback = {}) {
+            if (value === null || value === undefined || value === '') {
+                return fallback;
+            }
+            if (typeof value === 'object') {
+                return value;
+            }
+            try {
+                return JSON.parse(value);
+            } catch (error) {
+                console.warn('JSON parse failed:', error);
+                return fallback;
+            }
+        }
+
+        function isActivityClosed(activity) {
+            if (!activity) return false;
+            const maxTeams = typeof activity.maxTeams === 'number' && activity.maxTeams > 0 ? activity.maxTeams : null;
+            const remaining = calculateRemainingTeams(activity);
+            const limitReached = maxTeams !== null ? remaining <= 0 : false;
+            const deadlineIso = activity.registrationDeadline || null;
+            const deadlinePassed = activity.deadlinePassed !== undefined
+                ? activity.deadlinePassed
+                : (deadlineIso ? Date.now() > new Date(deadlineIso).getTime() : false);
+            return Boolean(activity.isClosed) || limitReached || deadlinePassed;
+        }
+
+        function setSubmitButtonState(disabled) {
+            if (!submitButton) return;
+            submitButton.disabled = disabled;
+            if (disabled) {
+                submitButton.classList.remove('bg-green-500', 'hover:bg-green-600', 'text-white');
+                submitButton.classList.add('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+            } else {
+                submitButton.classList.remove('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+                submitButton.classList.add('bg-green-500', 'hover:bg-green-600', 'text-white');
+            }
+        }
+
+        function validateStep(stepNumber) {
+            const stepIndex = stepNumber - 1;
+            if (!formSteps[stepIndex]) return true;
+            const inputs = formSteps[stepIndex].querySelectorAll('input, select, textarea');
+            for (const input of inputs) {
+                if (input.hasAttribute('required')) {
+                    if (!input.checkValidity()) {
+                        const label = input.id ? form.querySelector(`label[for="${input.id}"]`) : null;
+                        const fieldName = label ? label.textContent.replace('*', '').trim() : (input.getAttribute('placeholder') || input.name || 'ช่องนี้');
+                        input.classList.add('ring-2', 'ring-red-300', 'border-red-400');
+                        const removeErrorHighlight = () => {
+                            input.classList.remove('ring-2', 'ring-red-300', 'border-red-400');
+                            input.removeEventListener('input', removeErrorHighlight);
+                            input.removeEventListener('change', removeErrorHighlight);
+                        };
+                        input.addEventListener('input', removeErrorHighlight);
+                        input.addEventListener('change', removeErrorHighlight);
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'ข้อมูลไม่ครบ',
+                            text: `กรุณากรอก ${fieldName} ให้ครบถ้วน`,
+                            confirmButtonText: 'ตกลง'
+                        }).then(() => {
+                            input.focus();
+                        });
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function getOpenActivities() {
+            return ALL_ACTIVITIES.filter(activity => !isActivityClosed(activity));
+        }
+
+        function getAllCategories(activities = ALL_ACTIVITIES) {
+            if (!Array.isArray(activities)) return [];
+            const set = new Set();
+            activities.forEach(act => {
+                if (act && act.category) {
+                    set.add(act.category);
+                }
+            });
+            return Array.from(set).sort((a, b) => a.localeCompare(b, 'th'));
+        }
+
+        function renderHomeActivityCards(activities) {
+            if (!homeActivityContainer) return;
+            if (!activities || activities.length === 0) {
+                homeActivityContainer.innerHTML = '';
+                return;
+            }
+
+            const cardsHtml = activities.map(act => {
+                const levels = Array.isArray(act.levels) ? act.levels : [];
+                const levelsHtml = levels.map(level => `<span class="text-xs font-medium bg-slate-200 text-slate-700 px-2 py-1 rounded-full">${level}</span>`).join(' ');
+                const remainingTeams = calculateRemainingTeams(act);
+                const hasLimit = typeof act.maxTeams === 'number' && act.maxTeams > 0;
+                const limitLabel = hasLimit
+                    ? `เหลือ ${typeof remainingTeams === 'number' ? remainingTeams : 0} ทีม จาก ${act.maxTeams} ทีม`
+                    : 'ไม่จำกัดจำนวนทีม';
+                const deadlineText = act.registrationDeadlineDisplay || formatDeadline(act.registrationDeadline, 'ไม่ระบุ');
+                const currentTeams = act.currentTeams || 0;
+                const categoryLabel = act.category || 'ไม่ระบุหมวดหมู่';
+
+                return `
+                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col h-full">
+                        <div class="p-5 space-y-4 flex-1">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-slate-900 leading-tight">${act.name}</h3>
+                                    <p class="text-sm text-slate-500">${categoryLabel}</p>
+                                </div>
+                                <span class="inline-flex items-center text-xs font-semibold text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-full">เปิดรับสมัคร</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2">${levelsHtml}</div>
+                            <div class="text-sm text-slate-600 space-y-1">
+                                <p><span class="font-medium text-slate-700">รูปแบบ:</span> ${act.mode || '-'}</p>
+                                <p><span class="font-medium text-slate-700">จำนวนทีม:</span> ${limitLabel}</p>
+                                <p><span class="font-medium text-slate-700">ทีมที่ลงแล้ว:</span> ${currentTeams}</p>
+                                <p><span class="font-medium text-slate-700">ปิดรับสมัคร:</span> ${deadlineText}</p>
+                            </div>
+                        </div>
+                        <div class="border-t border-slate-200 bg-slate-50 p-4">
+                            <button class="w-full bg-sky-500 text-white font-semibold px-4 py-2 rounded-lg shadow-sm hover:bg-sky-600 transition-colors" onclick="selectActivityForForm('${act.id}')">
+                                สมัครทีม
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            homeActivityContainer.innerHTML = cardsHtml;
+        }
+
+        function updateHomeActivities({ resetVisibleCount = false } = {}) {
+            if (!homeActivityContainer || !homeActivityMeta) {
+                return;
+            }
+
+            if (resetVisibleCount) {
+                homeActivityState.visibleCount = homeActivityState.pageSize;
+            }
+
+            const openActivities = getOpenActivities();
+            const openCount = openActivities.length;
+            const searchTerm = (homeActivityState.search || '').trim().toLowerCase();
+            const selectedCategory = (homeActivityState.category || '').trim();
+            let filtered = openActivities;
+
+            if (selectedCategory) {
+                filtered = filtered.filter(act => (act.category || '').toLowerCase() === selectedCategory.toLowerCase());
+            }
+
+            if (searchTerm) {
+                filtered = filtered.filter(act => {
+                    const levels = Array.isArray(act.levels) ? act.levels.join(' ') : '';
+                    const blob = [
+                        act.name || '',
+                        act.category || '',
+                        levels,
+                        act.mode || ''
+                    ].join(' ').toLowerCase();
+                    return blob.includes(searchTerm);
+                });
+            }
+
+            if (openCount === 0) {
+                homeActivityMeta.textContent = 'ไม่มีกิจกรรมที่เปิดรับสมัครในขณะนี้';
+                renderHomeActivityCards([]);
+                if (homeActivityLoadMoreBtn) homeActivityLoadMoreBtn.classList.add('hidden');
+                if (homeActivityEmpty) homeActivityEmpty.classList.remove('hidden');
+                return;
+            }
+
+            if (filtered.length === 0) {
+                const keyword = homeActivityState.search.trim();
+                const categorySuffix = selectedCategory ? `ในหมวด "${selectedCategory}"` : '';
+                const keywordText = keyword ? `สำหรับ "${keyword}"` : (!selectedCategory ? 'ตามคำค้นหาที่ระบุ' : '');
+                const extraText = [categorySuffix, keywordText].filter(Boolean).join(' ');
+                homeActivityMeta.textContent = `เปิดรับสมัครทั้งหมด ${openCount} กิจกรรม • ไม่พบผลลัพธ์${extraText ? ' ' + extraText : ''}`;
+                renderHomeActivityCards([]);
+                if (homeActivityLoadMoreBtn) homeActivityLoadMoreBtn.classList.add('hidden');
+                if (homeActivityEmpty) homeActivityEmpty.classList.remove('hidden');
+                return;
+            }
+
+            const visibleCount = Math.min(filtered.length, homeActivityState.visibleCount);
+            homeActivityMeta.textContent = `เปิดรับสมัครทั้งหมด ${openCount} กิจกรรม • แสดง ${visibleCount} จาก ${filtered.length} กิจกรรมที่ตรงกับคำค้นหา`;
+
+            if (homeActivityEmpty) homeActivityEmpty.classList.add('hidden');
+
+            const itemsToRender = filtered.slice(0, homeActivityState.visibleCount);
+            renderHomeActivityCards(itemsToRender);
+
+            if (homeActivityLoadMoreBtn) {
+                if (filtered.length > itemsToRender.length) {
+                    homeActivityLoadMoreBtn.classList.remove('hidden');
+                } else {
+                    homeActivityLoadMoreBtn.classList.add('hidden');
+                }
+            }
+        }
+
+        function handleHomeActivitySearchInput(event) {
+            const value = event.target.value || '';
+            if (homeSearchDebounce) {
+                clearTimeout(homeSearchDebounce);
+            }
+            homeSearchDebounce = setTimeout(() => {
+                homeActivityState.search = value;
+                updateHomeActivities({ resetVisibleCount: true });
+            }, 250);
+        }
+
+        function handleHomeActivityLoadMore() {
+            homeActivityState.visibleCount += homeActivityState.pageSize;
+            updateHomeActivities();
+        }
+
+        function handleHomeCategoryClick(event) {
+            const { category } = event.currentTarget.dataset;
+            if (homeActivityState.category === category) {
+                homeActivityState.category = '';
+            } else {
+                homeActivityState.category = category;
+            }
+            updateHomeCategoryUI();
+            updateHomeActivities({ resetVisibleCount: true });
+        }
+
+        function updateHomeCategoryUI() {
+            if (!homeCategoryFilter) return;
+            const buttons = homeCategoryFilter.querySelectorAll('button[data-category]');
+            buttons.forEach(button => {
+                if (homeActivityState.category === button.dataset.category) {
+                    button.classList.add('bg-sky-500', 'text-white', 'border-transparent');
+                    button.classList.remove('bg-white', 'border-slate-300', 'text-slate-600');
+                } else {
+                    button.classList.remove('bg-sky-500', 'text-white', 'border-transparent');
+                    button.classList.add('bg-white', 'border-slate-300', 'text-slate-600');
+                }
+            });
+        }
+
+        function renderHomeCategoryFilter(categories) {
+            if (!homeCategoryFilter) return;
+            if (!categories || categories.length === 0) {
+                homeCategoryFilter.innerHTML = '';
+                homeActivityState.category = '';
+                return;
+            }
+
+            if (homeActivityState.category && !categories.includes(homeActivityState.category)) {
+                homeActivityState.category = '';
+            }
+
+            const buttonsHtml = ['<button type="button" data-category="" class="px-3 py-1.5 text-sm font-medium rounded-full border bg-white border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">ทั้งหมด</button>']
+                .concat(categories.map(category => `
+                    <button type="button" data-category="${category}" class="px-3 py-1.5 text-sm font-medium rounded-full border bg-white border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">${category}</button>
+                `)).join('');
+
+            homeCategoryFilter.innerHTML = buttonsHtml;
+            const buttons = homeCategoryFilter.querySelectorAll('button[data-category]');
+            buttons.forEach(button => {
+                button.addEventListener('click', handleHomeCategoryClick);
+            });
+            updateHomeCategoryUI();
+        }
+
+        function refreshActivitiesAfterCategoryChange(preferredActivityId = null) {
+            if (!activitySelect) return;
+            const activities = getFormActivities();
+            populateFormActivitySelect(activities);
+            if (preferredActivityId && activities.some(act => act.id === preferredActivityId)) {
+                activitySelect.value = preferredActivityId;
+            } else if (preferredActivityId) {
+                activitySelect.value = '';
+            }
+        }
+
+        function syncCategoryForActivity(activity) {
+            if (!activityCategorySelect || !activity) return;
+            const targetCategory = activity.category || '';
+            if (activityCategorySelect.value !== targetCategory) {
+                suppressCategorySync = true;
+                activityCategorySelect.value = targetCategory;
+                suppressCategorySync = false;
+            }
+            refreshActivitiesAfterCategoryChange(activity.id);
+        }
+
+        function handleTeamSearchInput(event) {
+            const value = event.target.value || '';
+            if (teamSearchDebounce) {
+                clearTimeout(teamSearchDebounce);
+            }
+            teamSearchDebounce = setTimeout(() => {
+                teamSearchTerm = value.trim().toLowerCase();
+                renderTeamTable(ALL_TEAMS);
+            }, 200);
+        }
+
+        function validateTeamRegistration(data, activity, teachers, students) {
+            const errors = [];
+            const trim = (value) => (value || '').toString().trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const phoneRegex = /^[0-9+()\-\s]{9,20}$/;
+
+            if (!activity) {
+                errors.push('กรุณาเลือกกิจกรรมที่ต้องการสมัคร');
+            }
+            if (!trim(data.level)) {
+                errors.push('กรุณาเลือกระดับการแข่งขัน');
+            }
+            if (!trim(data.school)) {
+                errors.push('กรุณากรอกชื่อสถานศึกษา');
+            }
+
+            const contactName = trim(data.contact.name);
+            const contactPhone = trim(data.contact.phone);
+            const contactEmail = trim(data.contact.email);
+
+            if (!contactName) {
+                errors.push('กรุณากรอกชื่อผู้ประสานงาน');
+            }
+            if (!contactPhone) {
+                errors.push('กรุณากรอกเบอร์โทรติดต่อ');
+            } else if (!phoneRegex.test(contactPhone)) {
+                errors.push('เบอร์โทรต้องมีอย่างน้อย 9 หลัก และสามารถใช้ตัวเลข + - ( ) และเว้นวรรคได้');
+            }
+            if (!contactEmail) {
+                errors.push('กรุณากรอกอีเมลผู้ประสานงาน');
+            } else if (!emailRegex.test(contactEmail)) {
+                errors.push('รูปแบบอีเมลผู้ประสานงานไม่ถูกต้อง');
+            }
+
+            const expectedTeachers = Number(activity?.reqTeachers ?? data.requiredTeachers ?? teachers.length);
+        const expectedStudents = Number(activity?.reqStudents ?? data.requiredStudents ?? students.length);
+
+        teachers.forEach((teacher, index) => {
+            const name = trim(teacher.name);
+            const phone = trim(teacher.phone);
+            if (!name || !phone) {
+                errors.push(`กรุณากรอกชื่อและเบอร์โทรของครูคนที่ ${index + 1}`);
+            } else if (!phoneRegex.test(phone)) {
+                errors.push(`เบอร์โทรของครูคนที่ ${index + 1} ต้องมีอย่างน้อย 9 หลัก และสามารถใช้ตัวเลข + - ( ) และเว้นวรรคได้`);
+            }
+        });
+
+            students.forEach((student, index) => {
+                const name = trim(student.name);
+                const classroom = trim(student.class);
+                if (!name || !classroom) {
+                    errors.push(`กรุณากรอกชื่อและชั้นเรียนของนักเรียนคนที่ ${index + 1}`);
+                }
+            });
+
+            if (teachers.length !== expectedTeachers) {
+                errors.push(`จำนวนครูไม่ตรงตามเงื่อนไข (${expectedTeachers} คน)`);
+            }
+            if (students.length !== expectedStudents) {
+                errors.push(`จำนวนนักเรียนไม่ตรงตามเงื่อนไข (${expectedStudents} คน)`);
+            }
+
+            return errors;
+        }
+
+        function base64ToBlob(base64, mimeType) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return new Blob([bytes], { type: mimeType });
+        }
+
+        function downloadBase64File(base64, mimeType, fileName) {
+            const blob = base64ToBlob(base64, mimeType);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function handleTeamsExport(format) {
+            const allowedFormats = ['csv', 'pdf'];
+            if (!allowedFormats.includes(format)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'รูปแบบไม่รองรับ',
+                    text: 'ไม่สามารถส่งออกไฟล์ในรูปแบบนี้ได้'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'กำลังเตรียมไฟล์...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            google.script.run
+                .withSuccessHandler(response => {
+                    Swal.close();
+                    if (!response || !response.success) {
+                        const message = response && response.error ? response.error : 'ไม่สามารถส่งออกข้อมูลได้';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'ส่งออกไม่สำเร็จ',
+                            text: message
+                        });
+                        return;
+                    }
+                    try {
+                        downloadBase64File(response.data, response.mimeType, response.fileName);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'ส่งออกสำเร็จ',
+                            text: `ไฟล์ ${response.fileName} ถูกดาวน์โหลดแล้ว`,
+                            timer: 2200,
+                            showConfirmButton: false
+                        });
+                    } catch (error) {
+                        handleError(error);
+                    }
+                })
+                .withFailureHandler(error => {
+                    Swal.close();
+                    handleError(error);
+                })
+                .exportTeams(format);
+        }
+
+        function navigateTo(sectionId, clickedItem = null) {
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) {
+                targetSection.classList.add('active');
+                window.scrollTo(0, 0); 
+            }
+
+            navItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            if (clickedItem) {
+                clickedItem.classList.add('active');
+            } else {
+                const matchingNavItem = document.querySelector(`.nav-item[onclick*="'${sectionId}'"]`);
+                if (matchingNavItem) {
+                    matchingNavItem.classList.add('active');
+                }
+            }
+            
+            if (sectionId === 'section-teams' && ALL_TEAMS.length === 0) {
+                loadRegisteredTeams();
+            }
+            if (sectionId === 'section-report') {
+                loadReportData();
+            }
+            if (sectionId === 'section-admin') {
+                loadFilesForReview();
+            }
+        }
+        
+        function nextStep(stepNumber) {
+            const currentStep = CURRENT_STEP;
+            if (!validateStep(currentStep)) {
+                return;
+            }
+            CURRENT_STEP = stepNumber;
+            updateFormStepUI();
+        }
+
+        function prevStep(stepNumber) {
+            CURRENT_STEP = stepNumber;
+            updateFormStepUI();
+        }
+
+        function updateFormStepUI() {
+            formSteps.forEach((step, index) => {
+                if ((index + 1) === CURRENT_STEP) {
+                    step.classList.add('active');
+                } else {
+                    step.classList.remove('active');
+                }
+            });
+
+            stepIndicators.forEach((indicator, index) => {
+                const div = indicator.querySelector('div');
+                const p = indicator.querySelector('p');
+                if ((index + 1) < CURRENT_STEP) {
+                    div.classList.remove('bg-slate-300', 'text-slate-600');
+                    div.classList.add('bg-green-500', 'text-white');
+                    p.classList.remove('text-slate-500');
+                    p.classList.add('text-green-600');
+                } else if ((index + 1) === CURRENT_STEP) {
+                    div.classList.remove('bg-slate-300', 'text-slate-600');
+                    div.classList.add('bg-sky-500', 'text-white');
+                    p.classList.remove('text-slate-500');
+                    p.classList.add('text-sky-600');
+                } else {
+                    div.classList.remove('bg-sky-500', 'bg-green-500', 'text-white');
+                    div.classList.add('bg-slate-300', 'text-slate-600');
+                    p.classList.remove('text-sky-600', 'text-green-600');
+                    p.classList.add('text-slate-500');
+                }
+            });
+        }
+        
+        // --- Data Loading Functions ---
+
+        function loadInitialData(force = false) {
+            const now = Date.now();
+            if (isLoadingActivities) {
+                return;
+            }
+            if (!force && lastActivitiesFetch && (now - lastActivitiesFetch) < FETCH_COOLDOWN_MS) {
+                updateHomeActivities();
+                return;
+            }
+
+            isLoadingActivities = true;
+            showLoading();
+            google.script.run
+                .withSuccessHandler((activities) => {
+                    lastActivitiesFetch = Date.now();
+                    isLoadingActivities = false;
+                    onActivitiesLoaded(activities);
+                })
+                .withFailureHandler(error => {
+                    isLoadingActivities = false;
+                    handleError(error);
+                })
+                .getActivities();
+            
+            google.script.run
+                .withSuccessHandler(userIsAdmin => {
+                    if (userIsAdmin) {
+                        console.log("User is Admin. Showing admin button.");
+                        document.getElementById('nav-admin-button').style.display = 'block';
+                    } else {
+                         console.log("User is not Admin.");
+                    }
+                })
+                .withFailureHandler(err => console.error("Admin check failed:", err))
+                .isAdmin();
+        }
+        
+        function onActivitiesLoaded(activities) {
+            hideLoading();
+            if (activities.error) {
+                activityLoading.innerText = 'เกิดข้อผิดพลาด: ' + activities.error;
+                return;
+            }
+            
+            const previousActivityId = activitySelect.value;
+            ALL_ACTIVITIES = activities;
+            renderGroupedActivityCards(activities); // ⬅️ อัปเดต: เรียกฟังก์ชันใหม่
+            populateActivityFilters(activities);
+            const categories = getAllCategories(activities);
+            renderHomeCategoryFilter(categories);
+            populateFormCategorySelect(categories);
+            populateFormActivitySelect(getFormActivities());
+            updateHomeActivities({ resetVisibleCount: true });
+            
+            if (previousActivityId) {
+                const selectedActivity = ALL_ACTIVITIES.find(act => act.id === previousActivityId);
+                if (selectedActivity && !isActivityClosed(selectedActivity)) {
+                    activitySelect.value = previousActivityId;
+                    updateFormBasedOnActivity(previousActivityId);
+                } else {
+                    activitySelect.value = '';
+                    updateFormBasedOnActivity('');
+                }
+            } else {
+                updateFormBasedOnActivity('');
+            }
+
+            updateActivityView();
+        }
+
+        function loadRegisteredTeams(force = false) {
+            const now = Date.now();
+            if (isLoadingTeams) {
+                return;
+            }
+            if (!force && lastTeamsFetch && (now - lastTeamsFetch) < FETCH_COOLDOWN_MS && ALL_TEAMS.length > 0) {
+                renderTeamTable(ALL_TEAMS);
+                return;
+            }
+
+            isLoadingTeams = true;
+            teamTableBody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">กำลังโหลดข้อมูลทีม...</td></tr>';
+            showLoading();
+            google.script.run
+                .withSuccessHandler((teams) => {
+                    lastTeamsFetch = Date.now();
+                    isLoadingTeams = false;
+                    onTeamsLoaded(teams);
+                })
+                .withFailureHandler(error => {
+                    isLoadingTeams = false;
+                    handleError(error);
+                })
+                .getRegisteredTeams();
+        }
+
+        function onTeamsLoaded(teams) {
+            hideLoading();
+            if (teams.error) {
+                teamTableBody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">เกิดข้อผิดพลาด: ${teams.error}</td></tr>`;
+                return;
+            }
+            
+            ALL_TEAMS = teams;
+            renderTeamTable(teams);
+            populateUploadTeamSelect(teams);
+            refreshActivityTeamCounts();
+        }
+        
+        function loadReportData(force = false) {
+            const now = Date.now();
+            if (!force && cachedReport && lastReportFetch && (now - lastReportFetch) < FETCH_COOLDOWN_MS) {
+                onReportLoaded(cachedReport);
+                return;
+            }
+            if (isLoadingReport) {
+                return;
+            }
+
+            isLoadingReport = true;
+            reportTableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">กำลังโหลดข้อมูลรายงาน...</td></tr>';
+            document.getElementById('report-total-teams').innerText = '...';
+            document.getElementById('report-total-teachers').innerText = '...';
+            document.getElementById('report-total-students').innerText = '...';
+            document.getElementById('report-total-all').innerText = '...';
+            
+            showLoading();
+            google.script.run
+                .withSuccessHandler(report => {
+                    isLoadingReport = false;
+                    if (report && !report.error) {
+                        cachedReport = report;
+                        lastReportFetch = Date.now();
+                    } else {
+                        cachedReport = null;
+                    }
+                    onReportLoaded(report);
+                })
+                .withFailureHandler(error => {
+                    isLoadingReport = false;
+                    handleError(error);
+                })
+                .getReportData();
+        }
+
+        function onReportLoaded(report) {
+            hideLoading();
+            if (report.error) {
+                 reportTableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">เกิดข้อผิดพลาด: ${report.error}</td></tr>`;
+                return;
+            }
+            
+            document.getElementById('report-total-teams').innerText = report.totals.teams;
+            document.getElementById('report-total-teachers').innerText = report.totals.teachers;
+            document.getElementById('report-total-students').innerText = report.totals.students;
+            document.getElementById('report-total-all').innerText = report.totals.allMembers;
+
+            const activityCategoryMap = new Map();
+            ALL_ACTIVITIES.forEach(activity => {
+                if (activity && activity.name) {
+                    activityCategoryMap.set(activity.name, activity.category || 'ไม่ระบุหมวดหมู่');
+                }
+            });
+
+            const groupedSummary = {};
+            for (const activityName in report.summary) {
+                const data = report.summary[activityName];
+                const category = activityCategoryMap.get(activityName) || 'ไม่ระบุหมวดหมู่';
+                if (!groupedSummary[category]) {
+                    groupedSummary[category] = [];
+                }
+                groupedSummary[category].push({
+                    activityName,
+                    teams: data.teams,
+                    teachers: data.teachers,
+                    students: data.students
+                });
+            }
+
+            const sortedCategories = Object.keys(groupedSummary).sort((a, b) => a.localeCompare(b, 'th'));
+            let html = '';
+            sortedCategories.forEach(category => {
+                html += `
+                    <tr class="bg-slate-100">
+                        <td colspan="5" class="p-3 text-sm font-semibold text-slate-700">${category}</td>
+                    </tr>
+                `;
+                groupedSummary[category]
+                    .sort((a, b) => a.activityName.localeCompare(b.activityName, 'th'))
+                    .forEach(item => {
+                        const totalMembers = item.teachers + item.students;
+                        html += `
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 text-sm text-slate-700 font-medium">${item.activityName}</td>
+                                <td class="p-3 text-sm text-slate-600">${item.teams}</td>
+                                <td class="p-3 text-sm text-slate-600">${item.teachers}</td>
+                                <td class="p-3 text-sm text-slate-600">${item.students}</td>
+                                <td class="p-3 text-sm text-slate-600 font-semibold">${totalMembers}</td>
+                            </tr>
+                        `;
+                    });
+            });
+
+            reportTableBody.innerHTML = html || '<tr><td colspan="5" class="p-4 text-center text-slate-500">ไม่พบข้อมูล</td></tr>';
+        }
+
+        function loadFilesForReview() {
+            adminLoading.innerText = 'กำลังโหลดรายการ...';
+            adminReviewList.innerHTML = '';
+            showLoading();
+            google.script.run
+                .withSuccessHandler(onFilesLoaded)
+                .withFailureHandler(handleError)
+                .getFilesForReview(); 
+        }
+        
+        function onFilesLoaded(files) {
+            hideLoading();
+            if (files.error) {
+                adminLoading.innerText = 'เกิดข้อผิดพลาด: ' + files.error;
+                return;
+            }
+            
+            if (files.length === 0) {
+                 adminLoading.innerText = 'ไม่พบไฟล์ที่รอตรวจสอบ (หรือคุณไม่มีสิทธิ์)';
+                 return;
+            }
+            
+            adminLoading.innerText = '';
+            let html = '';
+            files.forEach(file => {
+                html += `
+                    <div class="p-4 border border-slate-200 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <p class="font-semibold text-slate-800">Team: ${file.teamId} | ${file.fileType}</p>
+                            <a href="${file.fileUrl}" target="_blank" class="text-sm text-sky-600 hover:underline break-all">ดูไฟล์ (${file.fileId})</a>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-medium" onclick="approveFile('${file.fileId}')">✔️ อนุมัติ</button>
+                            <button class="bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-medium" onclick="rejectFile('${file.fileId}')">❌ ไม่ผ่าน</button>
+                        </div>
+                    </div>
+                `;
+            });
+            adminReviewList.innerHTML = html;
+        }
+
+        // --- UI Rendering Functions ---
+        
+        /**
+         * ⬇️ (อัปเดต)
+         * แสดงผลกิจกรรมแบบจัดกลุ่มตามหมวดหมู่
+         */
+        function renderGroupedActivityCards(activities) {
+            const container = document.getElementById('activity-container');
+            const loading = document.getElementById('activity-loading');
+            if (!container || !loading) {
+                console.warn('ไม่พบคอมโพเนนต์สำหรับแสดงรายการกิจกรรม');
+                return;
+            }
+            
+            if (!Array.isArray(activities) || activities.length === 0) {
+                loading.innerText = 'ไม่พบกิจกรรมที่ตรงกับเงื่อนไข';
+                loading.style.display = 'block';
+                container.innerHTML = ''; 
+                return;
+            }
+            
+            loading.style.display = 'none';
+            
+            const grouped = activities.reduce((acc, act) => {
+              const category = act.category || 'ไม่ระบุหมวดหมู่';
+              if (!acc[category]) {
+                acc[category] = [];
+              }
+              acc[category].push(act);
+              return acc;
+            }, {});
+
+            let html = '';
+            for (const category of Object.keys(grouped).sort()) { 
+              html += `<h2 class="text-2xl font-bold mb-3 px-2 mt-6 text-slate-800">${category}</h2>`; 
+              html += `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">`; 
+              
+              grouped[category].forEach(act => {
+                const levels = Array.isArray(act.levels) ? act.levels : [];
+                const levelsHtml = levels.map(level => `<span class="text-xs font-medium bg-slate-200 text-slate-700 px-2 py-1 rounded-full">${level}</span>`).join(' ');
+                const isClosed = isActivityClosed(act);
+                const remainingTeams = calculateRemainingTeams(act);
+                const hasLimit = typeof act.maxTeams === 'number' && act.maxTeams > 0;
+                const limitText = hasLimit
+                  ? `รับ ${act.maxTeams} ทีม (เหลือ ${typeof remainingTeams === 'number' ? remainingTeams : '-'} ทีม)`
+                  : 'ไม่จำกัดทีม';
+                const deadlineText = act.registrationDeadlineDisplay || formatDeadline(act.registrationDeadline);
+                const statusBadge = isClosed
+                  ? '<span class="inline-flex items-center text-xs font-semibold text-rose-600 bg-rose-100 px-3 py-1 rounded-full">ปิดรับสมัคร</span>'
+                  : '<span class="inline-flex items-center text-xs font-semibold text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">เปิดรับสมัคร</span>';
+                const buttonClasses = isClosed
+                  ? 'w-full bg-slate-300 text-slate-500 font-semibold px-5 py-2 rounded-lg shadow-sm cursor-not-allowed'
+                  : 'w-full bg-sky-500 text-white font-semibold px-5 py-2 rounded-lg shadow-sm hover:bg-sky-600 transition-colors';
+                const buttonAction = isClosed ? '' : `onclick="selectActivityForForm('${act.id}')"`;
+                const buttonDisabled = isClosed ? 'disabled' : '';
+                const buttonLabel = isClosed ? 'ปิดรับสมัคร' : 'สมัครทีม';
+                const currentTeamsText = `ทีมที่ลงแล้ว: ${act.currentTeams || 0}`;
+
+                html += `
+                    <div class="activity-card bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden flex flex-col">
+                        <div class="p-5 flex-grow space-y-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <h3 class="text-xl font-bold text-slate-900">${act.name}</h3>
+                                ${statusBadge}
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                ${levelsHtml}
+                            </div>
+                            <div class="text-sm font-semibold ${act.mode === 'Onsite' ? 'text-blue-600' : 'text-purple-600'}">${act.mode}</div>
+                            <div class="text-sm text-slate-600 space-y-1">
+                                <p><span class="font-medium text-slate-700">จำนวนทีม:</span> ${limitText}</p>
+                                <p><span class="font-medium text-slate-700">ปิดรับสมัคร:</span> ${deadlineText}</p>
+                                <p><span class="font-medium text-slate-700">${currentTeamsText}</span></p>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-4">
+                            <button class="${buttonClasses}" ${buttonAction} ${buttonDisabled}>
+                                ${buttonLabel}
+                            </button>
+                        </div>
+                    </div>
+                `;
+              });
+              
+              html += `</div>`; 
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function populateActivityFilters(activities) {
+            const categorySelect = document.getElementById('filter-category');
+            const nameSelect = document.getElementById('filter-activity-name');
+            const previousCategory = categorySelect.value;
+            const previousName = nameSelect.value;
+            
+            categorySelect.innerHTML = '<option value="">-- เลือกหมวดหมู่กิจกรรม --</option>';
+            nameSelect.innerHTML = '<option value="">-- เลือกกิจกรรม --</option>';
+            
+            const categories = [...new Set(activities.map(act => act.category))].filter(cat => !!cat);
+            categories.forEach(cat => {
+                categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+            
+            activities.forEach(act => {
+                nameSelect.innerHTML += `<option value="${act.name}">${act.name}</option>`;
+            });
+
+            if (!categorySelect.dataset.initialized) {
+                categorySelect.addEventListener('change', updateActivityView);
+                categorySelect.dataset.initialized = 'true';
+            }
+            if (!nameSelect.dataset.initialized) {
+                nameSelect.addEventListener('change', updateActivityView);
+                nameSelect.dataset.initialized = 'true';
+            }
+
+            if (previousCategory && categories.includes(previousCategory)) {
+                categorySelect.value = previousCategory;
+            }
+            if (previousName && activities.some(act => act.name === previousName)) {
+                nameSelect.value = previousName;
+            }
+        }
+
+        /**
+         * ⬇️ (อัปเดต)
+         * กรองการแสดงผลการ์ดกิจกรรมเมื่อ Filter เปลี่ยน
+         */
+        function updateActivityView() {
+          const catFilter = document.getElementById('filter-category').value;
+          const nameFilter = document.getElementById('filter-activity-name').value;
+          
+          let filtered = ALL_ACTIVITIES;
+          
+          if (catFilter) {
+            filtered = filtered.filter(act => act.category === catFilter);
+          }
+          if (nameFilter) {
+            filtered = filtered.filter(act => act.name === nameFilter);
+          }
+          
+          renderGroupedActivityCards(filtered); 
+        }
+
+
+        function populateFormActivitySelect(activities) {
+            activitySelect.innerHTML = '<option value="">-- เลือกกิจกรรม --</option>'; 
+            if (activities.length === 0) {
+                activitySelect.disabled = true;
+            } else {
+                activitySelect.disabled = false;
+            }
+            activities.forEach(act => {
+                const closed = isActivityClosed(act);
+                const labelSuffix = closed ? ' - ปิดรับสมัคร' : '';
+                const categoryLabel = act.category || 'ไม่ระบุหมวดหมู่';
+                const optionHtml = `<option value="${act.id}" data-closed="${closed}">${act.name} (${categoryLabel})${labelSuffix}</option>`;
+                activitySelect.innerHTML += optionHtml;
+            });
+        }
+
+        function populateFormCategorySelect(categories) {
+            if (!activityCategorySelect) return;
+            const previousValue = activityCategorySelect.value;
+            activityCategorySelect.innerHTML = '<option value="">-- เลือกหมวดหมู่ --</option>';
+            categories.forEach(category => {
+                activityCategorySelect.innerHTML += `<option value="${category}">${category}</option>`;
+            });
+            if (previousValue && categories.includes(previousValue)) {
+                activityCategorySelect.value = previousValue;
+            } else {
+                activityCategorySelect.value = '';
+            }
+        }
+
+        function refreshActivityTeamCounts() {
+            if (!Array.isArray(ALL_ACTIVITIES) || ALL_ACTIVITIES.length === 0) {
+                return;
+            }
+            const previouslySelectedActivityId = activitySelect.value;
+            const counts = {};
+            ALL_TEAMS.forEach(team => {
+                if (!team.activity) return;
+                counts[team.activity] = (counts[team.activity] || 0) + 1;
+            });
+
+            ALL_ACTIVITIES = ALL_ACTIVITIES.map(activity => {
+                const updated = { ...activity };
+                const maxTeams = typeof updated.maxTeams === 'number' && updated.maxTeams > 0 ? updated.maxTeams : null;
+                updated.currentTeams = counts[activity.id] || 0;
+                if (maxTeams !== null) {
+                    updated.remainingTeams = Math.max(maxTeams - updated.currentTeams, 0);
+                    updated.isFull = updated.remainingTeams === 0;
+                } else {
+                    updated.remainingTeams = null;
+                    updated.isFull = false;
+                }
+                const deadlineIso = updated.registrationDeadline || null;
+                const deadlinePassed = deadlineIso ? Date.now() > new Date(deadlineIso).getTime() : !!updated.deadlinePassed;
+                updated.deadlinePassed = deadlinePassed;
+                updated.isClosed = updated.isFull || deadlinePassed;
+                return updated;
+            });
+
+            const categories = getAllCategories(ALL_ACTIVITIES);
+            populateFormCategorySelect(categories);
+            renderHomeCategoryFilter(categories);
+            const availableFormActivities = getFormActivities();
+            populateFormActivitySelect(availableFormActivities);
+
+            if (previouslySelectedActivityId) {
+                const selectedActivity = ALL_ACTIVITIES.find(act => act.id === previouslySelectedActivityId);
+                const stillAvailable = availableFormActivities.some(act => act.id === previouslySelectedActivityId);
+                if (selectedActivity && !isActivityClosed(selectedActivity) && stillAvailable) {
+                    activitySelect.value = previouslySelectedActivityId;
+                } else {
+                    activitySelect.value = '';
+                }
+            }
+
+            updateFormBasedOnActivity(activitySelect.value || '');
+            updateHomeActivities();
+            updateActivityView();
+        }
+        
+        function getStatusBadge(status) {
+            if (status === 'Approved') {
+                return '<span class="px-2 py-1 text-xs font-semibold rounded-full badge-green">Approved</span>';
+            }
+            if (status === 'Rejected') {
+                return '<span class="px-2 py-1 text-xs font-semibold rounded-full badge-red">Rejected</span>';
+            }
+            return '<span class="px-2 py-1 text-xs font-semibold rounded-full badge-yellow">Pending</span>';
+        }
+
+        /**
+         * ⬇️ (อัปเดต)
+         * แสดงผลตารางทีม (เพิ่มการแสดงผลโลโก้)
+         */
+        function renderTeamTable(teams) {
+            if (!teamTableBody) return;
+            if (!Array.isArray(teams) || teams.length === 0) {
+                teamTableBody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">ยังไม่มีทีมที่ลงทะเบียน</td></tr>';
+                return;
+            }
+
+            const activityMap = new Map(ALL_ACTIVITIES.map(act => [act.id, act]));
+            const filteredTeams = applyTeamFilters(teams, activityMap);
+
+            if (filteredTeams.length === 0) {
+                teamTableBody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">ไม่พบทีมที่ตรงกับคำค้นหา</td></tr>';
+                return;
+            }
+
+            const groupedByCategory = new Map();
+            filteredTeams.forEach(team => {
+                const activityObj = activityMap.get(team.activity);
+                const categoryLabel = activityObj && activityObj.category ? activityObj.category : 'ไม่ระบุหมวดหมู่';
+                if (!groupedByCategory.has(categoryLabel)) {
+                    groupedByCategory.set(categoryLabel, []);
+                }
+                groupedByCategory.get(categoryLabel).push({ team, activityObj });
+            });
+
+            const sortedCategories = Array.from(groupedByCategory.keys()).sort((a, b) => a.localeCompare(b, 'th'));
+
+            let html = '';
+            sortedCategories.forEach(category => {
+                html += `
+                    <tr class="bg-slate-100">
+                        <td colspan="8" class="p-3 text-sm font-semibold text-slate-700">${category}</td>
+                    </tr>
+                `;
+
+                groupedByCategory.get(category).forEach(({ team, activityObj }) => {
+                    const members = safeJsonParse(team.members, { teachers: [], students: [] });
+                    const teachers = Array.isArray(members.teachers) ? members.teachers : [];
+                    const students = Array.isArray(members.students) ? members.students : [];
+                    const numTeachers = teachers.length;
+                    const numStudents = students.length;
+
+                    const activityName = activityObj ? activityObj.name : (team.activity || 'N/A');
+                    const requiredTeachers = team.requiredTeachers || (activityObj ? activityObj.reqTeachers : '-');
+                    const requiredStudents = team.requiredStudents || (activityObj ? activityObj.reqStudents : '-');
+
+                    let logoHtml = `
+                        <div class="team-logo-wrapper w-9 h-9 rounded-full border border-slate-200 bg-slate-100 flex items-center justify-center mr-3 text-slate-400">
+                            <span class="material-symbols-outlined text-lg">image_not_supported</span>
+                        </div>
+                    `;
+                    if (team.logoUrl) {
+                        const publicLogoUrl = `https://drive.google.com/thumbnail?id=${encodeURIComponent(team.logoUrl)}&sz=w80`;
+                        logoHtml = `
+                            <div class="team-logo-wrapper w-9 h-9 rounded-full border border-slate-200 bg-white overflow-hidden mr-3 flex items-center justify-center">
+                                <img src="${publicLogoUrl}" alt="โลโก้ทีม ${team.teamName || ''}" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer" data-team-logo="true">
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-3 text-sm text-slate-500"><input type="checkbox" aria-label="เลือกทีม ${team.teamId || ''}"></td>
+                            <td class="p-3 text-sm text-slate-700 font-semibold whitespace-nowrap">${team.teamId}</td>
+                            <td class="p-3 text-sm text-slate-700">
+                                <div class="font-medium text-slate-800">${activityName}</div>
+                                <div class="text-xs text-slate-500">${category || ''}</div>
+                            </td>
+                            <td class="p-3 text-sm text-slate-700">
+                                <div class="flex items-center">
+                                    ${logoHtml}
+                                    <div>
+                                        <div class="font-medium text-slate-800">${team.teamName || '-'}</div>
+                                        <div class="text-xs text-slate-500">${team.school || '-'}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-3 text-sm text-slate-600">${requiredTeachers} / <strong>${numTeachers}</strong></td>
+                            <td class="p-3 text-sm text-slate-600">${requiredStudents} / <strong>${numStudents}</strong></td>
+                            <td class="p-3 text-sm text-slate-600">${team.level || '-'}</td>
+                            <td class="p-3 text-sm">${getStatusBadge(team.status)}</td>
+                        </tr>
+                    `;
+                });
+            });
+
+            teamTableBody.innerHTML = html;
+            applyTeamLogoFallbacks();
+        }
+
+        function applyTeamFilters(teams, activityMap) {
+            if (!teamSearchTerm) {
+                return [...teams];
+            }
+            const keyword = teamSearchTerm;
+            return teams.filter(team => {
+                const activityObj = activityMap.get(team.activity) || {};
+                const contact = safeJsonParse(team.contact, {});
+                const values = [
+                    team.teamId,
+                    team.teamName,
+                    team.school,
+                    team.level,
+                    activityObj.name,
+                    activityObj.category,
+                    contact.name,
+                    contact.phone,
+                    contact.email,
+                    team.status
+                ];
+                return values.some(value => {
+                    return (value || '').toString().toLowerCase().includes(keyword);
+                });
+            });
+        }
+
+        function applySchoolOptions(schools) {
+            if (!schoolOptionsList) return;
+            schoolOptionsList.innerHTML = '';
+            schools.forEach(school => {
+                if (!school || !school.name) return;
+                const option = document.createElement('option');
+                option.value = school.name;
+                const labelParts = [];
+                if (school.id) labelParts.push(`[${school.id}]`);
+                labelParts.push(school.name);
+                if (school.cluster) labelParts.push(`(${school.cluster})`);
+                option.label = labelParts.join(' ');
+                option.dataset.schoolId = school.id || '';
+                option.dataset.schoolCluster = school.cluster || '';
+                schoolOptionsList.appendChild(option);
+            });
+        }
+
+        function loadSchoolOptions(force = false) {
+            if (!schoolOptionsList) return;
+            const now = Date.now();
+            if (!force && SCHOOL_OPTIONS.length > 0 && (now - lastSchoolFetch) < SCHOOL_FETCH_COOLDOWN_MS) {
+                applySchoolOptions(SCHOOL_OPTIONS);
+                return;
+            }
+            if (isLoadingSchools) return;
+            isLoadingSchools = true;
+            google.script.run
+                .withSuccessHandler(schools => {
+                    isLoadingSchools = false;
+                    if (schools && !schools.error && Array.isArray(schools)) {
+                        SCHOOL_OPTIONS = schools;
+                        lastSchoolFetch = Date.now();
+                        applySchoolOptions(SCHOOL_OPTIONS);
+                    } else {
+                        if (schools && schools.error) {
+                            console.warn('โหลดรายชื่อโรงเรียนไม่สำเร็จ:', schools.error);
+                        }
+                    }
+                })
+                .withFailureHandler(error => {
+                    isLoadingSchools = false;
+                    console.error('โหลดรายชื่อโรงเรียนผิดพลาด', error);
+                })
+                .getSchoolList();
+        }
+
+        function applyTeamLogoFallbacks() {
+            if (!teamTableBody) return;
+            const images = teamTableBody.querySelectorAll('img[data-team-logo="true"]');
+            images.forEach(img => {
+                img.addEventListener('error', () => {
+                    const wrapper = img.closest('.team-logo-wrapper');
+                    if (wrapper) {
+                        wrapper.innerHTML = '<span class="material-symbols-outlined text-lg text-slate-400">image_not_supported</span>';
+                        wrapper.classList.remove('bg-white');
+                        wrapper.classList.add('bg-slate-100', 'flex', 'items-center', 'justify-center', 'text-slate-400');
+                    }
+                }, { once: true });
+            });
+        }
+
+        function populateUploadTeamSelect(teams) {
+            uploadTeamIdSelect.innerHTML = '<option value="">-- กรุณาเลือกรหัสทีม --</option>'; 
+            teams.forEach(team => {
+                const activityObj = ALL_ACTIVITIES.find(act => act.id === team.activity);
+                const activityName = activityObj ? activityObj.name : team.activity;
+                uploadTeamIdSelect.innerHTML += `<option value="${team.teamId}">${team.teamId} - ${activityName} (${team.teamName || 'N/A'})</option>`;
+            });
+        }
+
+
+        // --- Form Logic ---
+        
+        function selectActivityForForm(activityId) {
+            const activity = ALL_ACTIVITIES.find(act => act.id === activityId);
+            if (isActivityClosed(activity)) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'กิจกรรมนี้ปิดรับสมัครแล้ว',
+                    text: 'ไม่สามารถสมัครทีมใหม่ได้'
+                });
+                return;
+            }
+            if (activityCategorySelect && activity) {
+                syncCategoryForActivity(activity);
+            }
+            activitySelect.value = activityId;
+            updateFormBasedOnActivity(activityId);
+            navigateTo('section-form');
+        }
+
+        activitySelect.addEventListener('change', (e) => {
+            const selectedId = e.target.value;
+            const activity = ALL_ACTIVITIES.find(act => act.id === selectedId);
+            if (activity && activityCategorySelect) {
+                syncCategoryForActivity(activity);
+            }
+            if (activity && isActivityClosed(activity)) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'กิจกรรมนี้ปิดรับสมัครแล้ว',
+                    text: 'ไม่สามารถสมัครทีมใหม่ได้'
+                });
+                activitySelect.value = '';
+                updateFormBasedOnActivity('');
+                return;
+            }
+            updateFormBasedOnActivity(selectedId);
+        });
+
+        function updateFormBasedOnActivity(activityId) {
+            const activity = ALL_ACTIVITIES.find(act => act.id === activityId);
+            if (!activity) {
+                levelSelect.innerHTML = '<option value="">-- เลือกระดับ --</option>';
+                memberReqText.innerText = 'กรุณาเลือกกิจกรรม...';
+                teacherFields.innerHTML = '';
+                studentFields.innerHTML = '';
+                setSubmitButtonState(true);
+                return;
+            }
+
+            if (isActivityClosed(activity)) {
+                levelSelect.innerHTML = '<option value="">-- เลือกระดับ --</option>';
+                memberReqText.innerText = 'กิจกรรมนี้ปิดรับสมัครแล้ว';
+                teacherFields.innerHTML = '';
+                studentFields.innerHTML = '';
+                setSubmitButtonState(true);
+                return;
+            }
+
+            setSubmitButtonState(false);
+            
+            // Populate levels
+            levelSelect.innerHTML = '<option value="">-- เลือกระดับ --</option>';
+            (Array.isArray(activity.levels) ? activity.levels : []).forEach(level => {
+                levelSelect.innerHTML += `<option value="${level}">${level}</option>`;
+            });
+            if (Array.isArray(activity.levels) && activity.levels.length === 1) {
+                levelSelect.value = activity.levels[0];
+            } else {
+                levelSelect.value = '';
+            }
+            
+            const reqs = {
+                teachers: activity.reqTeachers || 1,
+                students: activity.reqStudents || 2
+            };
+
+            const remainingTeams = calculateRemainingTeams(activity);
+            const hasLimit = typeof activity.maxTeams === 'number' && activity.maxTeams > 0;
+            const limitText = hasLimit
+                ? `รับ ${activity.maxTeams} ทีม (เหลือ ${typeof remainingTeams === 'number' ? remainingTeams : '-'} ทีม)`
+                : 'ไม่จำกัดทีม';
+            const deadlineText = activity.registrationDeadlineDisplay || formatDeadline(activity.registrationDeadline);
+            
+            memberReqText.innerHTML = `กิจกรรมนี้ต้องการ: ครู ${reqs.teachers} คน, นักเรียน ${reqs.students} คน` +
+                `<br>จำนวนทีม: ${limitText}` +
+                `<br>ปิดรับสมัคร: ${deadlineText}`;
+            
+            // Generate member fields
+            teacherFields.innerHTML = '';
+            for (let i = 1; i <= reqs.teachers; i++) {
+                teacherFields.innerHTML += `
+                    <div class="p-3 border rounded-lg bg-slate-50">
+                        <p class="font-medium mb-2">ครู คนที่ ${i}</p>
+                        <input type="text" name="teacherName" placeholder="ชื่อ-สกุล ครู" class="w-full p-2 border border-slate-300 rounded-lg mb-2" required>
+                        <input type="tel" name="teacherPhone" placeholder="เบอร์โทร ครู" class="w-full p-2 border border-slate-300 rounded-lg" required>
+                    </div>
+                `;
+            }
+            
+            studentFields.innerHTML = '';
+            for (let i = 1; i <= reqs.students; i++) {
+                studentFields.innerHTML += `
+                     <div class="p-3 border rounded-lg bg-slate-50">
+                        <p class="font-medium mb-2">นักเรียน คนที่ ${i}</p>
+                        <input type="text" name="studentName" placeholder="ชื่อ-สกุล นักเรียน" class="w-full p-2 border border-slate-300 rounded-lg mb-2" required>
+                        <input type="text" name="studentClass" placeholder="ชั้นเรียน (เช่น ม.3/1)" class="w-full p-2 border border-slate-300 rounded-lg" required>
+                    </div>
+                `;
+            }
+        }
+        
+        /**
+         * ⬇️ (ฟังก์ชันใหม่)
+         * อ่านไฟล์โลโก้, ตรวจสอบ, และแปลงเป็น Base64
+         */
+        function handleLogoSelect(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                LOGO_FILE_DATA = null;
+                logoStatus.innerText = "รองรับ .png, .jpg (ไม่เกิน 2MB)";
+                logoStatus.style.color = '#64748b'; // slate-500
+                return;
+            }
+
+            // 1. ตรวจสอบขนาด
+            const MAX_SIZE_MB = 2; // 2MB
+            if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+                logoStatus.innerText = `❌ ไฟล์ใหญ่เกิน ${MAX_SIZE_MB}MB`;
+                logoStatus.style.color = '#ef4444'; // red-500
+                event.target.value = ''; // Clear selection
+                LOGO_FILE_DATA = null;
+                return;
+            }
+            
+            // 2. ตรวจสอบประเภท
+            const ALLOWED_TYPES = ['image/jpeg', 'image/png'];
+            if (!ALLOWED_TYPES.includes(file.type)) {
+                 logoStatus.innerText = `❌ รองรับ .jpg, .png เท่านั้น`;
+                 logoStatus.style.color = '#ef4444'; // red-500
+                 event.target.value = ''; // Clear selection
+                 LOGO_FILE_DATA = null;
+                 return;
+            }
+
+            // 3. อ่านไฟล์
+            logoStatus.innerText = `⏳ กำลังเตรียมไฟล์: ${file.name}`;
+            logoStatus.style.color = '#0ea5e9'; // sky-500
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                const base64Data = e.target.result.split(',')[1];
+                LOGO_FILE_DATA = {
+                    base64Data: base64Data,
+                    mimeType: file.type,
+                    fileName: file.name
+                };
+                logoStatus.innerText = `✔️ ไฟล์พร้อมแล้ว: ${file.name}`;
+                logoStatus.style.color = '#22c55e'; // green-500
+            };
+            
+            reader.onerror = () => {
+                 logoStatus.innerText = `❌ อ่านไฟล์ไม่สำเร็จ`;
+                 logoStatus.style.color = '#ef4444'; // red-500
+                 LOGO_FILE_DATA = null;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+
+        /**
+         * ⬇️ (อัปเดต)
+         * ส่งข้อมูลฟอร์ม (แนบ Base64 ของโลโก้ไปด้วย ถ้ามี)
+         */
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!form.reportValidity()) {
+                return;
+            }
+            
+            const formData = new FormData(form);
+            const getValue = (name) => (formData.get(name) || '').toString().trim();
+            const data = {};
+
+            data.activity = getValue('activity');
+            data.level = getValue('level');
+            data.school = getValue('school');
+            data.teamName = getValue('teamName');
+            
+            if (!data.activity) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'กรุณาเลือกกิจกรรม',
+                    text: 'โปรดเลือกกิจกรรมที่ต้องการสมัคร'
+                });
+                return;
+            }
+
+            const activity = ALL_ACTIVITIES.find(act => act.id === data.activity);
+            if (!activity) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไม่พบกิจกรรมที่เลือก',
+                    text: 'กรุณาลองใหม่อีกครั้ง'
+                });
+                return;
+            }
+
+            if (isActivityClosed(activity)) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'กิจกรรมนี้ปิดรับสมัครแล้ว',
+                    text: 'ไม่สามารถสมัครทีมใหม่ได้'
+                });
+                return;
+            }
+
+            data.contact = {
+                name: getValue('contactName'),
+                phone: getValue('contactPhone'),
+                email: getValue('contactEmail')
+            };
+            
+            const teacherNameInputs = Array.from(document.querySelectorAll('input[name="teacherName"]'));
+            const teacherPhoneInputs = Array.from(document.querySelectorAll('input[name="teacherPhone"]'));
+            const teachers = teacherNameInputs.map((input, index) => ({
+                name: (input.value || '').trim(),
+                phone: (teacherPhoneInputs[index]?.value || '').trim()
+            }));
+            
+            const studentNameInputs = Array.from(document.querySelectorAll('input[name="studentName"]'));
+            const studentClassInputs = Array.from(document.querySelectorAll('input[name="studentClass"]'));
+            const students = studentNameInputs.map((input, index) => ({
+                 name: (input.value || '').trim(),
+                 class: (studentClassInputs[index]?.value || '').trim()
+            }));
+            
+            data.members = { teachers, students };
+            
+            data.requiredTeachers = activity ? Number(activity.reqTeachers || teachers.length) : teachers.length;
+            data.requiredStudents = activity ? Number(activity.reqStudents || students.length) : students.length;
+
+            const validationErrors = validateTeamRegistration(data, activity, teachers, students);
+            if (validationErrors.length > 0) {
+                const errorList = `<ul class="text-left list-disc list-inside space-y-1">${validationErrors.map(err => `<li>${err}</li>`).join('')}</ul>`;
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'กรุณาตรวจสอบข้อมูล',
+                    html: errorList
+                });
+                return;
+            }
+
+            // ⬇️ (ใหม่) แนบข้อมูลโลโก้ (Base64)
+            if (LOGO_FILE_DATA) {
+                data.logoFileData = LOGO_FILE_DATA; 
+            }
+            // ⬆️
+
+            console.log("Submitting data:", data);
+            
+            showLoading();
+            google.script.run
+                .withSuccessHandler(onRegistrationSuccess)
+                .withFailureHandler(handleError)
+                .registerTeam(data);
+        });
+        
+        /**
+         * ⬇️ (อัปเดต)
+         * ล้างค่าโลโก้ เมื่อสมัครสำเร็จ
+         */
+        function onRegistrationSuccess(response) {
+            hideLoading();
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'ลงทะเบียนสำเร็จ!',
+                    text: `รหัสทีมของคุณคือ: ${response.teamId}`
+                }).then(() => {
+                    form.reset();
+                    
+                    // ⬇️ (ใหม่) ล้างค่าโลโก้
+                    LOGO_FILE_DATA = null;
+                    logoStatus.innerText = "รองรับ .png, .jpg (ไม่เกิน 2MB)";
+                    logoStatus.style.color = '#64748b';
+                    logoInput.value = '';
+                    // ⬆️
+                    
+                    activitySelect.value = '';
+                    updateFormBasedOnActivity('');
+                    setSubmitButtonState(true);
+                    
+                    CURRENT_STEP = 1;
+                    updateFormStepUI();
+                    loadRegisteredTeams(true);
+                    cachedReport = null;
+                    lastReportFetch = 0;
+                    loadSchoolOptions(true);
+                    navigateTo('section-teams'); 
+                });
+            } else {
+                handleError({ message: response.error });
+            }
+        }
+        
+        // --- File Upload Logic (Section 5) ---
+        
+        uploadButton.addEventListener('click', function() {
+            const teamId = uploadTeamIdSelect.value;
+            const fileType = uploadFileTypeSelect.value;
+            const file = fileInput.files[0];
+
+            if (!teamId || !fileType || !file) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'กรุณากรอกข้อมูลให้ครบ',
+                    text: 'โปรดเลือกทีม ประเภทไฟล์ และไฟล์ที่ต้องการอัปโหลด'
+                });
+                return;
+            }
+            
+            const MAX_SIZE_MB = 5; // 5 MB
+            if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+                uploadStatusDiv.innerHTML = `<p class="text-red-600 font-semibold">❌ ไฟล์ใหญ่เกิน ${MAX_SIZE_MB}MB (ไฟล์ของคุณ ${ (file.size/1024/1024).toFixed(2) }MB)</p>`;
+                return;
+            }
+
+            const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+            if (!ALLOWED_TYPES.includes(file.type)) {
+                 uploadStatusDiv.innerHTML = `<p class="text-red-600 font-semibold">❌ รองรับเฉพาะไฟล์ .pdf, .jpg, .png เท่านั้น (ไฟล์ของคุณคือ ${file.type})</p>`;
+                 return;
+            }
+            
+            showLoading();
+            uploadStatusDiv.innerHTML = `<p class="text-sky-600">กำลังอัปโหลด ${file.name}...</p>`;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64Data = e.target.result.split(',')[1]; 
+                const fileData = {
+                    base64Data: base64Data,
+                    mimeType: file.type,
+                    fileName: file.name,
+                    teamId: teamId,
+                    fileType: fileType
+                };
+                
+                google.script.run
+                    .withSuccessHandler(onUploadSuccess)
+                    .withFailureHandler(onUploadFailure)
+                    .uploadFile(fileData);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function onUploadSuccess(response) {
+            hideLoading();
+            if (response.success) {
+                 uploadStatusDiv.innerHTML = `<p class="text-green-600">✔️ ${response.message}</p>`;
+                 fileInput.value = ''; 
+                 uploadFileTypeSelect.value = '';
+            } else {
+                onUploadFailure({ message: response.error });
+            }
+        }
+        
+        function onUploadFailure(error) {
+            hideLoading();
+            uploadStatusDiv.innerHTML = `<p class="text-red-600">❌ อัปโหลดล้มเหลว: ${error.message}</p>`;
+        }
+        
+        
+        // --- Admin Actions ---
+        
+        async function approveFile(fileLogId) {
+            const result = await Swal.fire({
+                icon: 'question',
+                title: `ยืนยันการอนุมัติไฟล์ ${fileLogId}?`,
+                confirmButtonText: 'อนุมัติ',
+                cancelButtonText: 'ยกเลิก',
+                showCancelButton: true
+            });
+            if (!result.isConfirmed) return;
+            
+            showLoading();
+            google.script.run
+                .withSuccessHandler(onAdminActionSuccess)
+                .withFailureHandler(handleError)
+                .updateFileStatus(fileLogId, 'Approved', '');
+        }
+
+        async function rejectFile(fileLogId) {
+            const result = await Swal.fire({
+                icon: 'warning',
+                title: `กรุณาระบุเหตุผลที่ 'ไม่ผ่าน' สำหรับไฟล์ ${fileLogId}`,
+                input: 'textarea',
+                inputPlaceholder: 'พิมพ์เหตุผลที่ต้องการแจ้งทีม...',
+                showCancelButton: true,
+                confirmButtonText: 'ส่ง',
+                cancelButtonText: 'ยกเลิก',
+                inputAttributes: {
+                    'aria-label': 'เหตุผล'
+                }
+            });
+            if (!result.isConfirmed) return;
+            const remarks = result.value || '';
+            
+            showLoading();
+            google.script.run
+                .withSuccessHandler(onAdminActionSuccess)
+                .withFailureHandler(handleError)
+                .updateFileStatus(fileLogId, 'Rejected', remarks);
+        }
+        
+        function onAdminActionSuccess(response) {
+            hideLoading();
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'อัปเดตสำเร็จ',
+                    text: response.message
+                });
+                loadFilesForReview(); // Reload list
+            } else {
+                handleError({ message: response.error });
+            }
+        }
+
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            setSubmitButtonState(true);
+            loadInitialData(); 
+            navigateTo('section-hero', document.querySelector('.nav-item')); 
+
+            // ⬇️ (ใหม่) เพิ่ม Listener ให้ช่องอัปโหลดโลโก้
+            logoInput.addEventListener('change', handleLogoSelect);
+            if (homeActivitySearchInput) {
+                homeActivitySearchInput.addEventListener('input', handleHomeActivitySearchInput);
+            }
+            if (homeActivityLoadMoreBtn) {
+                homeActivityLoadMoreBtn.addEventListener('click', handleHomeActivityLoadMore);
+            }
+            if (teamSearchInput) {
+                teamSearchInput.addEventListener('input', handleTeamSearchInput);
+            }
+            if (activityCategorySelect) {
+                activityCategorySelect.addEventListener('change', () => {
+                    if (suppressCategorySync) {
+                        return;
+                    }
+                    const previousActivityId = activitySelect.value;
+                    refreshActivitiesAfterCategoryChange(previousActivityId);
+                    updateFormBasedOnActivity(activitySelect.value || '');
+                });
+            }
+            const exportCsvButton = document.getElementById('export-csv-button');
+            if (exportCsvButton) {
+                exportCsvButton.addEventListener('click', () => handleTeamsExport('csv'));
+            }
+            const exportPdfButton = document.getElementById('export-pdf-button');
+            if (exportPdfButton) {
+                exportPdfButton.addEventListener('click', () => handleTeamsExport('pdf'));
+            }
+        loadSchoolOptions();
+    });
+
+    function getFormActivities() {
+        let activities = [...ALL_ACTIVITIES];
+        if (!activityCategorySelect) {
+            return activities;
+        }
+        const selectedCategory = activityCategorySelect.value || '';
+        if (selectedCategory) {
+            activities = activities.filter(act => (act.category || '') === selectedCategory);
+        }
+        return activities;
+    }
+
+</script>
     <div id="root"></div>
     <script type="module" src="./index.js"></script>
-  </body>
+</body>
 </html>
